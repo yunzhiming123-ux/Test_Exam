@@ -1027,6 +1027,30 @@ class HTMLGenerator:
 
 
 # ==================== 主窗口 ====================
+
+
+# ==================== 数学公式保护（防markdown误解析） ====================
+_MATH_PLACEHOLDERS = []
+
+def _protect_math(text: str) -> str:
+    """把 $$...$$ 和 $...$ 替换为占位符，防止 markdown 把 C_{in} 解析为斜体"""
+    _MATH_PLACEHOLDERS.clear()
+    def _repl(m):
+        _MATH_PLACEHOLDERS.append(m.group(0))
+        return f'\x00MATH{len(_MATH_PLACEHOLDERS)-1}\x00'
+    # 先保护块级公式 $$...$$（跨行）
+    text = re.sub(r'\$\$[\s\S]*?\$\$', _repl, text)
+    # 再保护行内公式 $...$（单行内）
+    text = re.sub(r'\$[^$\n]+?\$', _repl, text)
+    return text
+
+def _restore_math(html: str) -> str:
+    """将占位符还原为原始公式"""
+    for i, m in enumerate(_MATH_PLACEHOLDERS):
+        html = html.replace(f'\x00MATH{i}\x00', m)
+    return html
+
+
 class ExamBank(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -1218,7 +1242,10 @@ class ExamBank(QMainWindow):
 
         # 学习模式：直接渲染原始Markdown，不解析题目卡片
         if self.current_mode == "learn":
-            html_body = markdown.markdown(md_text, extensions=['extra', 'toc', 'nl2br', 'fenced_code', 'codehilite'])
+            # 保护数学公式：markdown库会把 C_{in} 的 _ 误当斜体标记
+            protected = _protect_math(md_text)
+            html_body = markdown.markdown(protected, extensions=['extra', 'toc', 'nl2br', 'fenced_code', 'codehilite'])
+            html_body = _restore_math(html_body)
             css = build_css(self.current_theme)
             full = f"""<!DOCTYPE html>
 <html lang="zh-CN">

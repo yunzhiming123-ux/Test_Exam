@@ -44,13 +44,14 @@ class QuestionType(Enum):
 
 class Question:
     """单道题目"""
-    __slots__ = ('qid', 'qtype', 'title', 'options', 'answer', 'explanation', 'code')
+    __slots__ = ('qid', 'qtype', 'title', 'options', 'answer_letter', 'answer', 'explanation', 'code')
     def __init__(self):
         self.qid = ""
         self.qtype = QuestionType.SHORT
         self.title = ""
-        self.options = []        # [(label, text), ...]  for CHOICE
-        self.answer = ""         # 正确答案文本
+        self.options = []        # [(label, text), ...]  选择题的选项
+        self.answer_letter = ""  # 选择题正确选项字母 (A/B/C/D)
+        self.answer = ""         # 完整答案文本
         self.explanation = ""    # 答案解析
         self.code = ""           # 关联的代码块
 
@@ -66,12 +67,17 @@ class MDParser:
     )
     # 匹配选项 A. / B. / C. / D.
     RE_OPTION  = re.compile(r'^([A-Da-d])[\.\、\s）)]\s*(.+)')
+    # 匹配同一行的多个选项："A. xxx  B. yyy  C. zzz"（修复Bug：旧版只能识别行首第一个）
+    RE_OPTION_INLINE = re.compile(r'([A-D])[\.\、\s）)]\s*(.+?)(?=\s+[A-D][\.\、\s）)]|$)', re.I)
     # 匹配填空题的横线
     RE_BLANK   = re.compile(r'(_{2,}|\\underline\{[^}]*\}|\$\$?\s*\\underline\{[^}]*\})')
     # 匹配答案区域
     RE_DETAILS_START = re.compile(r'<details[^>]*>')
     RE_DETAILS_END   = re.compile(r'</details>')
     RE_ANSWER_PREFIX = re.compile(r'^\*?\*?(?:A|答案)(\d+)\**\s*[\.\、：:）)]?\s*(.+)', re.IGNORECASE)
+    # 从答案中提取正确选项字母："A4. B。" → "B"（修复Bug：旧版 charAt(0) 取 'A' 而非 'B'）
+    RE_ANSWER_LETTER = re.compile(r'A\d+\s*[\.\、：:]\s*([A-Da-d])[\.\、。）]', re.I)
+    RE_ANSWER_STANDALONE = re.compile(r'(?:^|\n)\s*([A-Da-d])\s*[\.\、。）]?\s*$', re.M)
 
     @classmethod
     def parse(cls, md_text: str, file_name: str = "") -> tuple:
@@ -179,7 +185,8 @@ class MDParser:
             q.code = code_match.group(1).strip()
 
         # 提取答案
-        q.answer, q.explanation = cls._extract_answer(lines, start_idx, legacy=True)
+        q.answer, q.answer_letter = cls._extract_answer(lines, start_idx, legacy=True)
+        q.explanation = q.answer
         return q
 
     @classmethod
@@ -217,11 +224,18 @@ class MDParser:
                 break
             if re.match(r'^\*\*题目\s*\d+', l.strip()):
                 break
-            opt_match = cls.RE_OPTION.match(l.strip())
-            if opt_match:
+            # 优先检查同行多选项（修复Bug：旧版"A. xxx  B. yyy"只识别A）
+            inline_opts = cls.RE_OPTION_INLINE.findall(l.strip())
+            if inline_opts and len(inline_opts) >= 2:
                 has_options = True
-                label, text = opt_match.group(1).upper(), opt_match.group(2).strip()
-                q.options.append((label, text))
+                for lbl, txt in inline_opts:
+                    q.options.append((lbl.upper(), txt.strip()))
+            else:
+                opt_match = cls.RE_OPTION.match(l.strip())
+                if opt_match:
+                    has_options = True
+                    label, text = opt_match.group(1).upper(), opt_match.group(2).strip()
+                    q.options.append((label, text))
             body_lines.append(l)
 
         body_text = '\n'.join(body_lines)
@@ -241,7 +255,8 @@ class MDParser:
             q.code = code_match.group(1).strip()
 
         # 在题目块后续行中找答案
-        q.answer, q.explanation = cls._extract_answer(lines, start_idx)
+        q.answer, q.answer_letter = cls._extract_answer(lines, start_idx)
+        q.explanation = q.answer
         return q
 
     @classmethod
@@ -265,11 +280,18 @@ class MDParser:
                 break
             if cls.RE_DETAILS_START.search(l) or l.strip().startswith('<details'):
                 break
-            opt_match = cls.RE_OPTION.match(l.strip())
-            if opt_match:
+            # 优先检查同行多选项（修复Bug：旧版"A. xxx  B. yyy"只识别A）
+            inline_opts = cls.RE_OPTION_INLINE.findall(l.strip())
+            if inline_opts and len(inline_opts) >= 2:
                 has_options = True
-                label, text = opt_match.group(1).upper(), opt_match.group(2).strip()
-                q.options.append((label, text))
+                for lbl, txt in inline_opts:
+                    q.options.append((lbl.upper(), txt.strip()))
+            else:
+                opt_match = cls.RE_OPTION.match(l.strip())
+                if opt_match:
+                    has_options = True
+                    label, text = opt_match.group(1).upper(), opt_match.group(2).strip()
+                    q.options.append((label, text))
             body_lines.append(l)
 
         body_text = '\n'.join(body_lines)
@@ -287,14 +309,15 @@ class MDParser:
         if code_match:
             q.code = code_match.group(1).strip()
 
-        q.answer, q.explanation = cls._extract_answer(lines, start_idx, legacy=True)
+        q.answer, q.answer_letter = cls._extract_answer(lines, start_idx, legacy=True)
+        q.explanation = q.answer
         return q
 
     @classmethod
     def _extract_answer(cls, lines, from_idx, legacy=False):
-        """从 <details> 块或答案行中提取答案"""
+        """从 <details> 块或答案行中提取答案文本和正确选项字母"""
         answer_text = ""
-        explanation = ""
+        answer_letter = ""
 
         # 先找 <details> 块
         search_range = range(from_idx, min(from_idx + 100, len(lines)))
@@ -314,11 +337,24 @@ class MDParser:
 
         if details_lines:
             full_details = '\n'.join(details_lines)
-            # 清理 HTML 标签
+            # 清理 HTML 标签和 ** 标记
             clean = re.sub(r'<[^>]+>', '', full_details)
             clean = re.sub(r'\*\*(.+?)\*\*', r'\1', clean)
             answer_text = clean.strip()
-            explanation = answer_text
+
+            # 智能提取正确选项字母（修复Bug：旧版 charAt(0) 从"A4. B"取'A'而非'B'）
+            m_letter = cls.RE_ANSWER_LETTER.search(clean)
+            if m_letter:
+                answer_letter = m_letter.group(1).upper()
+            if not answer_letter:
+                m_letter = cls.RE_ANSWER_STANDALONE.search(clean)
+                if m_letter:
+                    answer_letter = m_letter.group(1).upper()
+            # 宽松匹配："答案： C" 格式
+            if not answer_letter:
+                m_letter = re.search(r'(?:答案[：:]\s*)?\b([A-Da-d])\b', clean)
+                if m_letter:
+                    answer_letter = m_letter.group(1).upper()
 
         # 如果没找到details，则尝试匹配 **答案N** 行
         if not answer_text:
@@ -335,10 +371,13 @@ class MDParser:
                             break
                         if nl:
                             expl_lines.append(nl)
-                    explanation = '\n'.join(expl_lines)
+                    answer_text = '\n'.join(expl_lines)
+                    m_l = cls.RE_ANSWER_LETTER.search(answer_text)
+                    if m_l:
+                        answer_letter = m_l.group(1).upper()
                     break
 
-        return answer_text, explanation
+        return answer_text, answer_letter
 
     @classmethod
     def _find_question_end(cls, lines, start_idx):
@@ -812,7 +851,7 @@ class HTMLGenerator:
 
         return HTMLGenerator._base_html(body, f"""
             window.__totalQuestions__ = {len(questions)};
-            window.__correctAnswers__ = {json.dumps({q.qid: q.answer for q in questions}, ensure_ascii=False)};
+            window.__correctAnswers__ = {json.dumps({q.qid: (q.answer_letter if q.qtype == QuestionType.CHOICE else q.answer) for q in questions}, ensure_ascii=False)};
         """)
 
     @staticmethod
@@ -831,7 +870,7 @@ class HTMLGenerator:
 
         return HTMLGenerator._base_html(body, f"""
             window.__totalQuestions__ = {len(questions)};
-            window.__correctAnswers__ = {json.dumps({q.qid: q.answer for q in questions}, ensure_ascii=False)};
+            window.__correctAnswers__ = {json.dumps({q.qid: (q.answer_letter if q.qtype == QuestionType.CHOICE else q.answer) for q in questions}, ensure_ascii=False)};
             window.__submitted__ = {{}};
         """)
 
@@ -852,7 +891,7 @@ class HTMLGenerator:
 
         extra_js = f"""
             window.__totalQuestions__ = {len(questions)};
-            window.__correctAnswers__ = {json.dumps({q.qid: q.answer for q in questions}, ensure_ascii=False)};
+            window.__correctAnswers__ = {json.dumps({q.qid: (q.answer_letter if q.qtype == QuestionType.CHOICE else q.answer) for q in questions}, ensure_ascii=False)};
             var examStart = Date.now();
             setInterval(function() {{
                 if (examSubmitted) return;

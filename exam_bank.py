@@ -1219,7 +1219,16 @@ class ExamBank(QMainWindow):
         # 学习模式：直接渲染原始Markdown，不解析题目卡片
         if self.current_mode == "learn":
             html_body = markdown.markdown(md_text, extensions=['extra', 'toc', 'nl2br', 'fenced_code', 'codehilite'])
-            full = f"""<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><style>{build_css(self.current_theme)}</style></head><body>{html_body}</body></html>"""
+            css = build_css(self.current_theme)
+            full = f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><style>{css}</style>
+<script>window.MathJax={{tex:{{inlineMath:[['$','$'],['\\\\(','\\\\)']],displayMath:[['$$','$$']]}},svg:{{fontCache:'global'}}}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded',function(){{hljs.highlightAll();}});</script>
+</head><body>{html_body}</body></html>"""
             self.web_view.setHtml(full, QUrl.fromLocalFile(os.path.dirname(md_path) + '/'))
             self.statusBar().showMessage(f"{os.path.basename(md_path)} | {self.current_theme}主题")
             return

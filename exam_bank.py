@@ -1284,7 +1284,7 @@ class ExamBank(QMainWindow):
         CUSTOM_THEME["bg"] = ""
         CUSTOM_THEME["text"] = ""
         if self.current_file:
-            self._render_file(self.current_file)
+            self.load_and_render(self.current_file)
 
     def _custom_bg(self):
         """自定义背景颜色（继承自 MyFirstQt.py 的 QColorDialog 功能）"""
@@ -1309,7 +1309,7 @@ class ExamBank(QMainWindow):
         CUSTOM_THEME["bg"] = ""
         CUSTOM_THEME["text"] = ""
         if self.current_file:
-            self._render_file(self.current_file)
+            self.load_and_render(self.current_file)
         self.statusBar().showMessage(f"已重置为 {self.current_theme} 默认色")
 
 

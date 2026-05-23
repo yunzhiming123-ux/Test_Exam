@@ -861,7 +861,7 @@ class HTMLGenerator:
         return HTMLGenerator._base_html(body, f"""
             window.__totalQuestions__ = {len(questions)};
             window.__correctAnswers__ = {json.dumps({q.qid: (q.answer_letter if q.qtype == QuestionType.CHOICE else q.answer) for q in questions}, ensure_ascii=False)};
-        """)
+        """, css=css)
 
     @staticmethod
     def _practice_mode(questions, file_name, theme="亮色"):
@@ -882,7 +882,7 @@ class HTMLGenerator:
             window.__totalQuestions__ = {len(questions)};
             window.__correctAnswers__ = {json.dumps({q.qid: (q.answer_letter if q.qtype == QuestionType.CHOICE else q.answer) for q in questions}, ensure_ascii=False)};
             window.__submitted__ = {{}};
-        """)
+        """, css=css)
 
     @staticmethod
     def _exam_mode(questions, file_name, theme="亮色"):
@@ -914,7 +914,7 @@ class HTMLGenerator:
             shuffleOptions();
         """
         css = build_css(theme)
-        return HTMLGenerator._base_html(body, extra_js)
+        return HTMLGenerator._base_html(body, extra_js, css=css)
 
     @staticmethod
     def _question_card(q: Question, mode="learn") -> str:
@@ -1227,7 +1227,7 @@ class ExamBank(QMainWindow):
         if not self.current_questions:
             # 无题目，直接用 markdown 渲染
             html_body = markdown.markdown(md_text, extensions=['extra', 'toc', 'nl2br', 'fenced_code', 'codehilite'])
-            full = f"""<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><style>{css or CSS_STYLE}</style></head><body>{html_body}</body></html>"""
+            full = f"""<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><style>{build_css(self.current_theme)}</style></head><body>{html_body}</body></html>"""
             self.web_view.setHtml(full, QUrl.fromLocalFile(os.path.dirname(md_path) + '/'))
             self.statusBar().showMessage(f"[无题目] {os.path.basename(md_path)}")
         else:

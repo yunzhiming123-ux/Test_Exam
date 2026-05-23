@@ -1216,6 +1216,14 @@ class ExamBank(QMainWindow):
 
         self.current_file = md_path
 
+        # 学习模式：直接渲染原始Markdown，不解析题目卡片
+        if self.current_mode == "learn":
+            html_body = markdown.markdown(md_text, extensions=['extra', 'toc', 'nl2br', 'fenced_code', 'codehilite'])
+            full = f"""<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><style>{build_css(self.current_theme)}</style></head><body>{html_body}</body></html>"""
+            self.web_view.setHtml(full, QUrl.fromLocalFile(os.path.dirname(md_path) + '/'))
+            self.statusBar().showMessage(f"{os.path.basename(md_path)} | {self.current_theme}主题")
+            return
+
         # 使用缓存
         cache_key = md_path
         if cache_key in self.file_cache:

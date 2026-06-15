@@ -434,6 +434,12 @@ class ExamBank(QMainWindow):
 
 # ==================== 启动入口 ====================
 def main():
+    # 设置 Qt 平台插件路径（解决 Windows 平台插件找不到的问题）
+    import PyQt5
+    pyqt5_dir = os.path.dirname(PyQt5.__file__)
+    plugin_path = os.path.join(pyqt5_dir, 'Qt', 'plugins')
+    os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+    
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     app = QApplication(sys.argv)

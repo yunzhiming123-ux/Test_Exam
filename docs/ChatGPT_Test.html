@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDK X5 端侧 AI 遥操作与动作预测系统 - 方案汇报</title>
+    <style>
+        /* 全局样式与变量定义 */
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: rgba(30, 41, 59, 0.45);
+            --bg-card-hover: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(99, 102, 241, 0.15);
+            --border-hover: rgba(6, 182, 212, 0.4);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --color-primary: #6366f1;
+            --color-secondary: #06b6d4;
+            --color-accent: #a855f7;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans CJK SC", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            background-position: center;
+        }
+
+        /* 背景流光点缀 */
+        .glow-sphere {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            z-index: -1;
+            opacity: 0.25;
+            pointer-events: none;
+        }
+        .glow-1 { top: 10%; left: 15%; width: 400px; height: 400px; background: var(--color-primary); }
+        .glow-2 { top: 35%; right: 10%; width: 500px; height: 500px; background: var(--color-secondary); }
+        .glow-3 { top: 65%; left: 5%; width: 450px; height: 450px; background: var(--color-accent); }
+        .glow-4 { bottom: 5%; right: 15%; width: 400px; height: 400px; background: var(--color-primary); }
+
+        /* 布局容器 */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        section {
+            padding: 100px 0;
+            position: relative;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        /* 统一标题样式 */
+        .section-header {
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .section-header h2 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fff 30%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            display: inline-block;
+            position: relative;
+        }
+
+        .section-header h2::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+            border-radius: 2px;
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 1. 封面 */
+        .hero-section {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0 24px;
+            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.8) 0%, #0b0f19 100%);
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ffffff 40%, #a5b4fc 70%, #22d3ee 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 24px;
+            text-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+        }
+
+        .hero-subtitle {
+            font-size: 1.4rem;
+            color: #cbd5e1;
+            font-weight: 400;
+            margin-bottom: 32px;
+            letter-spacing: 0.05em;
+        }
+
+        .hero-subtitle span {
+            color: var(--color-secondary);
+            font-weight: 600;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            color: var(--color-secondary);
+            border-radius: 100px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            letter-spacing: 0.05em;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            animation: bounce 2s infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
+            40% { transform: translate(-50%, -10px); }
+            60% { transform: translate(-50%, -5px); }
+        }
+
+        /* 2. 项目背景与痛点 */
+        .painpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1px)); /* Flex fallback handled via CSS columns or display table */
+        }
+        /* Using modern grid securely */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+        @media (max-width: 868px) {
+            .grid-3, .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            box-shadow: 0 10px 30px rgba(6, 182, 212, 0.06);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .card-icon svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .pain-card .card-icon { border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); }
+        .sol-card .card-icon { border-color: rgba(34, 197, 94, 0.2); background: rgba(34, 197, 94, 0.05); }
+
+        .card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .solution-highlight-box {
+            grid-column: 1 / -1;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 16px;
+            padding: 24px 32px;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .solution-highlight-box .text h4 {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .solution-highlight-box .price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--color-secondary);
+            text-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+
+        /* 3. 核心流水线 (CSS绘制的响应式复杂流程图) */
+        .pipeline-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(12px);
+        }
+
+        .flow-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        @media (max-width: 992px) {
+            .flow-row { flex-direction: column; }
+            .flow-arrow-horizontal { transform: rotate(90deg); margin: 8px 0; }
+        }
+
+        .flow-node {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .flow-node:hover {
+            border-color: var(--color-secondary);
+            background: rgba(15, 23, 42, 0.8);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
+        }
+
+        .flow-node-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .flow-node-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .flow-node.highlight-node {
+            border-color: rgba(99, 102, 241, 0.5);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%);
+        }
+
+        .flow-arrow-horizontal {
+            color: var(--text-secondary);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.5;
+        }
+
+        .flow-connector-vertical {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px 0;
+            color: var(--color-secondary);
+            opacity: 0.6;
+        }
+
+        .output-destinations {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            width: 100%;
+        }
+        @media (max-width: 640px) {
+            .output-destinations { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .dest-card {
+            background: rgba(6, 182, 212, 0.03);
+            border: 1px dashed rgba(6, 182, 212, 0.2);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+        }
+
+        /* 4. 架构设计 */
+        .architecture-layers {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .arch-layer {
+            display: grid;
+            grid-template-columns: 180px 1fr;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .arch-layer:hover {
+            border-color: var(--border-hover);
+            transform: translateX(4px);
+        }
+
+        .layer-name {
+            background: rgba(99, 102, 241, 0.1);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: var(--color-secondary);
+            font-size: 0.95rem;
+            letter-spacing: 0.05em;
+        }
+
+        .layer-body {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .arch-tag {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+        }
+
+        .arch-tag.highlight {
+            border-color: rgba(168, 85, 247, 0.4);
+            background: rgba(168, 85, 247, 0.05);
+            color: #e9d5ff;
+        }
+
+        .architecture-summary {
+            background: rgba(30, 41, 59, 0.2);
+            border-left: 4px solid var(--color-accent);
+            padding: 20px;
+            border-radius: 0 12px 12px 0;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+        .architecture-summary strong {
+            color: #fff;
+        }
+
+        /* 5 & 8. 表格设计 */
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            margin-bottom: 24px;
+        }
+
+        .modern-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        .modern-table th {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 18px 24px;
+            font-weight: 600;
+            color: var(--color-secondary);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+        }
+
+        .modern-table td {
+            padding: 18px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: #cbd5e1;
+        }
+
+        .modern-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .modern-table tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .star-rating {
+            color: #f59e0b;
+            letter-spacing: 2px;
+        }
+
+        .table-footer-note {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-left: 4px;
+        }
+        .table-footer-note span {
+            color: var(--color-secondary);
+            font-weight: bold;
+        }
+
+        /* 9. 时间线 */
+        .timeline {
+            position: relative;
+            margin: 40px 0;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--color-primary), var(--color-secondary), transparent);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -30px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--bg-main);
+            border: 3px solid var(--color-secondary);
+            box-shadow: 0 0 10px var(--color-secondary);
+            z-index: 2;
+        }
+
+        .timeline-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+        }
+
+        .timeline-content:hover {
+            border-color: var(--border-hover);
+            transform: translateX(4px);
+        }
+
+        .timeline-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .timeline-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .timeline-time {
+            font-size: 0.85rem;
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--color-secondary);
+            padding: 3px 10px;
+            border-radius: 100px;
+            border: 1px solid rgba(6, 182, 212, 0.2);
+        }
+
+        .timeline-body {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* 10. 技术亮点区块 */
+        .highlights-bar-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        @media (max-width: 868px) {
+            .highlights-bar-container { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .highlights-bar-container { grid-template-columns: 1fr; }
+        }
+
+        .highlight-bar-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.3) 0%, rgba(15, 23, 42, 0.5) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .highlight-bar-card .stat {
+            font-size: 2rem;
+            font-weight: 700;
+            color: transparent;
+            background: linear-gradient(135deg, var(--color-secondary), var(--color-primary));
+            -webkit-background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .highlight-bar-card .label {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        /* 11. 结尾页 */
+        .footer-section {
+            text-align: center;
+            padding: 120px 0;
+            background: radial-gradient(circle at top, rgba(99, 102, 241, 0.08) 0%, #0b0f19 70%);
+        }
+
+        .footer-content h2 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 40%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+
+        .footer-punchline {
+            font-size: 1.3rem;
+            color: var(--color-secondary);
+            font-weight: 500;
+            margin-bottom: 48px;
+            letter-spacing: 0.05em;
+        }
+
+        .contact-box {
+            display: inline-flex;
+            gap: 32px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 16px 32px;
+            border-radius: 100px;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .contact-box span strong {
+            color: #fff;
+        }
+
+        /* 辅助样式 */
+        .text-accent { color: var(--color-accent); }
+        .text-primary-color { color: var(--color-primary); }
+        .text-secondary-color { color: var(--color-secondary); }
+    </style>
+</head>
+<body>
+
+    <!-- 背景粒子/流光效果 -->
+    <div class="glow-sphere glow-1"></div>
+    <div class="glow-sphere glow-2"></div>
+    <div class="glow-sphere glow-3"></div>
+    <div class="glow-sphere glow-4"></div>
+
+    <!-- 1. 封面区块 -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="hero-badge">2026年度智能机器人方案汇报</div>
+            <h1>RDK X5 端侧 AI 遥操作与动作预测系统</h1>
+            <p class="hero-subtitle">Skill + Protocol 双解耦架构 <span>·</span> 千元级动捕替代方案</p>
+            <div style="font-size: 1.1rem; color: #94a3b8; max-width: 600px; margin: 0 auto 40px auto; letter-spacing: 0.05em;">
+                “不拼精度天花板，拼性能/价格比”
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <span>向下滚动了解方案</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+        </div>
+    </section>
+
+    <!-- 2. 项目背景与痛点 -->
+    <section id="background">
+        <div class="container">
+            <div class="section-header">
+                <h2>项目背景与行业痛点</h2>
+                <p>打破高昂硬件壁垒，用算法红利平替传统昂贵动捕与传统遥操作方案</p>
+            </div>
+            
+            <div class="grid-3" style="margin-bottom: 24px;">
+                <div class="card pain-card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>
+                    </div>
+                    <h3>专业动捕昂贵</h3>
+                    <p>XSens / OptiTrack 等专业方案动辄超过 100,000 元，个人创作者及小型工作室完全无力负担。</p>
+                </div>
+                
+                <div class="card pain-card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <h3>纯视觉方案缺陷</h3>
+                    <p>传统 MediaPipe 直出方案受限于摄像头帧率，在快速运动时存在严重的抖动、丢帧、且完全无预测能力。</p>
+                </div>
+                
+                <div class="card pain-card">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    </div>
+                    <h3>遥控学习成本高</h3>
+                    <p>传统机器人遥操作依赖极为专业的工业摇杆或示教器，操作人员需要长期培训，人机交互不直观。</p>
+                </div>
+            </div>
+
+            <div class="solution-highlight-box">
+                <div class="text">
+                    <h4>颠覆性破局方案</h4>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">通过地平线 RDK X5 (10 TOPS) + 普通 USB 摄像头 + MOSS 时序预测模型，完美平替高档硬件</p>
+                </div>
+                <div class="price">总成本 &lt; ¥1,000</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. 核心流水线 -->
+    <section id="pipeline">
+        <div class="container">
+            <div class="section-header">
+                <h2>核心数据流水线</h2>
+                <p>一脉相承的高效端侧处理闭环，实现从原始像素输入到多端异构设备响应的超低延迟传递</p>
+            </div>
+
+            <div class="pipeline-container">
+                <div class="flow-wrapper">
+                    <!-- 第一行：感知到Agent -->
+                    <div class="flow-row">
+                        <div class="flow-node">
+                            <div class="flow-node-title">1. 数据捕捉</div>
+                            <div class="flow-node-desc">普通万兆/百兆 USB 摄像头</div>
+                        </div>
+                        <div class="flow-arrow-horizontal">➔</div>
+                        <div class="flow-node highlight-node">
+                            <div class="flow-node-title">2. MOSS 运动预测模型</div>
+                            <div class="flow-node-desc">RDK X5 BPU 加速 / 补帧 / 平滑</div>
+                        </div>
+                        <div class="flow-arrow-horizontal">➔</div>
+                        <div class="flow-node">
+                            <div class="flow-node-title">3. OpenClaw Agent</div>
+                            <div class="flow-node-desc">核心任务编排与自然语言交互</div>
+                        </div>
+                    </div>
+
+                    <!-- 垂直连接线 -->
+                    <div class="flow-connector-vertical">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                    </div>
+
+                    <!-- 第二行：解耦协议层 -->
+                    <div class="flow-row">
+                        <div class="flow-node highlight-node">
+                            <div class="flow-node-title">4. Skill 能力层 (motion_output.skill)</div>
+                            <div class="flow-node-desc">轻量化：仅做模型预测输出向标准化协议封装</div>
+                        </div>
+                        <div class="flow-arrow-horizontal">➔</div>
+                        <div class="flow-node">
+                            <div class="flow-node-title">5. MotionControl Protocol</div>
+                            <div class="flow-node-desc">统一的轻量级 JSON / Protobuf 数据协议</div>
+                        </div>
+                        <div class="flow-arrow-horizontal">➔</div>
+                        <div class="flow-node">
+                            <div class="flow-node-title">6. 适配器层 (Adapter)</div>
+                            <div class="flow-node-desc">各接收端专属适配器，协议一键转专有指令</div>
+                        </div>
+                    </div>
+
+                    <!-- 垂直连接线 -->
+                    <div class="flow-connector-vertical">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                    </div>
+
+                    <!-- 第三行：下游异构应用 -->
+                    <div class="output-destinations">
+                        <div class="dest-card">🎭 虚拟主播</div>
+                        <div class="dest-card">🦾 工业/桌面机械臂</div>
+                        <div class="dest-card">🖥️ 远程桌面控制</div>
+                        <div class="dest-card">🚗 轮式小车底盘</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. 架构设计 -->
+    <section id="architecture">
+        <div class="container">
+            <div class="section-header">
+                <h2>Skill + Protocol 双解耦架构</h2>
+                <p>将核心算法与外设完全抽离，实现“一次开发，多端部署”的极简生态扩展能力</p>
+            </div>
+
+            <div class="architecture-layers">
+                <div class="arch-layer">
+                    <div class="layer-name">感知层</div>
+                    <div class="layer-body">
+                        <span class="arch-tag">USB 摄像头</span>
+                        <span class="arch-tag">双目相机</span>
+                        <span class="arch-tag">MediaPipe on BPU</span>
+                        <span class="arch-tag">YOLOv8-pose on BPU</span>
+                    </div>
+                </div>
+
+                <div class="arch-layer">
+                    <div class="layer-name">推理层</div>
+                    <div class="layer-body">
+                        <span class="arch-tag highlight">MOSS 运动趋势预测模型</span>
+                        <span class="arch-tag">BPU 定点量化</span>
+                        <span class="arch-tag">时序断帧补间</span>
+                        <span class="arch-tag">卡尔曼/平滑滤波</span>
+                    </div>
+                </div>
+
+                <div class="arch-layer">
+                    <div class="layer-name">Agent 层</div>
+                    <div class="layer-body">
+                        <span class="arch-tag">OpenClaw 核心框架</span>
+                        <span class="arch-tag">Skill 动态编排驱动</span>
+                        <span class="arch-tag">LLM 自然语言交互</span>
+                    </div>
+                </div>
+
+                <div class="arch-layer">
+                    <div class="layer-name">Skill 层</div>
+                    <div class="layer-body">
+                        <span class="arch-tag highlight">motion_output.skill</span>
+                        <span class="arch-tag" style="color: var(--color-secondary);">极轻量 (代码 &lt; 50 行)</span>
+                        <span class="arch-tag">纯粹功能：仅负责将模型推理结构组包转换为统一协议</span>
+                    </div>
+                </div>
+
+                <div class="arch-layer">
+                    <div class="layer-name">协议层</div>
+                    <div class="layer-body">
+                        <span class="arch-tag highlight">MotionControl Protocol</span>
+                        <span class="arch-tag">标准化标准化 JSON 结构体</span>
+                        <span class="arch-tag">高并发超低延迟 Protobuf 二进制流</span>
+                    </div>
+                </div>
+
+                <div class="arch-layer">
+                    <div class="layer-name">适配器层</div>
+                    <div class="layer-body">
+                        <span class="arch-tag">虚拟主播 VMC Adapter</span>
+                        <span class="arch-tag">ROS2 机械臂 Adapter</span>
+                        <span class="arch-tag">MQTT 远程控制 Adapter</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="architecture-summary">
+                💡 <strong>架构核心亮点：</strong> Skill 层极致轻量化，<strong>每个 Skill 代码控制在 50 行以内</strong>。协议层屏蔽底层硬件差异，统一一切输入。当您需要新增任何机器人硬件或虚拟端时，<strong>完全无需修改任何核心推理代码，仅需根据标准化协议编写一个下游 Adapter 即可快速跑通。</strong>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. 端云算力分配 -->
+    <section id="computing">
+        <div class="container">
+            <div class="section-header">
+                <h2>端云协同算力合理化分配</h2>
+                <p>将对延迟高度敏感的感知与预测紧锁在边缘端，将高价值的语义及训练任务托付给云端</p>
+            </div>
+
+            <div class="table-container">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>核心计算任务</th>
+                            <th>运行位置</th>
+                            <th>算力消耗状况</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>人体关键点检测</strong> (MediaPipe/YOLOv8-pose)</td>
+                            <td>RDK X5 端侧 BPU</td>
+                            <td>约 <span class="text-secondary-color">3 TOPS</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>MOSS 运动预测模型</strong> (时序补帧与平滑处理)</td>
+                            <td>RDK X5 端侧 BPU</td>
+                            <td>约 <span class="text-secondary-color">4 TOPS</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>大模型语义理解与复杂场景分析</strong></td>
+                            <td>远端云服务器</td>
+                            <td>- (不占用端侧资源)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>超高自由度精细手势特殊映射</strong></td>
+                            <td>云端可选托管</td>
+                            <td>- (不占用端侧资源)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>长周期数据记录与大模型离线微调</strong></td>
+                            <td>中心云存储/算力群</td>
+                            <td>- (后台离线运行)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer-note">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                边缘端侧算力安全裕量：10 TOPS (总算力) - 3 - 4 = <span>约 3 TOPS 剩余</span>，足以稳定支撑系统运行与其他轻量级任务。
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. 核心创新点 -->
+    <section id="innovations">
+        <div class="container">
+            <div class="section-header">
+                <h2>四大核心创新点</h2>
+                <p>不仅是成本的缩减，更是人机交互与系统解耦架构的全面革新</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-icon" style="border-color: rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.05);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>
+                    </div>
+                    <h3>1. 真正实现端侧运动趋势预测</h3>
+                    <p>打破常规视觉动捕“纯粹跟随”的刻板逻辑。本系统嵌入专门量化的 MOSS 时序模型进行运动趋势超前预测，大幅度补偿网络丢帧与传感器硬件采集抖动。</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon" style="border-color: rgba(6, 182, 212, 0.3); background: rgba(6, 182, 212, 0.05);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/><path d="m10 8 6 4-6 4V8z"/></svg>
+                    </div>
+                    <h3>2. Skill + Protocol 极致解耦</h3>
+                    <p>将具体业务能力解耦成独立的极简代码块，每个 Skill 代码体量不足 50 行，不参杂任何具体的硬件依赖。下发通信协议即是设备间的唯一语言，带来无法比拟的扩充自由度。</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon" style="border-color: rgba(168, 85, 247, 0.3); background: rgba(168, 85, 247, 0.05);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </div>
+                    <h3>3. 精准优雅的端云协同策略</h3>
+                    <p>“实时控制留在边缘，高阶认知依附云端”。充分释放 RDK X5 的 10 TOPS 高效 BPU 算力，既不需要在边缘硬扛多模态大语言模型，又最大程度保证了控制命令的零延迟回传。</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon" style="border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.05);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                    </div>
+                    <h3>4. 消费级价格普及动捕技术</h3>
+                    <p>以极致的性价比将专业动捕和高级遥操作系统的研发与使用门槛从“万元、十万元级”直接打入“千元内”消费级区间，让普通开发者与创作者触手可及。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. 应用场景 -->
+    <section id="scenarios">
+        <div class="container">
+            <div class="section-header">
+                <h2>多元化应用示范场景</h2>
+                <p>一套核心技术，原生无缝跨界虚拟、现实世界中的多种控制载体</p>
+            </div>
+
+            <div class="grid-3">
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon" style="margin: 0 auto 20px auto; border-color: rgba(6, 182, 212, 0.2);"><span style="font-size: 1.5rem;">🎭</span></div>
+                    <h3>低成本虚拟主播系统</h3>
+                    <p>仅需普通 USB 摄像头接入 RDK X5，系统便可通过 BPU 提取姿态并进行 MOSS 平滑预测，最终输出 VMC 标准动捕协议驱动 3D VRM 虚拟角色，总开发与硬件成本控制在 1000 元内。</p>
+                </div>
+
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon" style="margin: 0 auto 20px auto; border-color: rgba(99, 102, 241, 0.2);"><span style="font-size: 1.5rem;">🦾</span></div>
+                    <h3>隔空手势无感遥操作</h3>
+                    <p>无需手持繁琐沉重的实体手柄，操作者仅凭摄像头前的原生手势与肢体姿态，即可直接丝滑映射并远程控制外部小车底盘行走或云台摄像机追踪，实现直观的“无感交互”。</p>
+                </div>
+
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon" style="margin: 0 auto 20px auto; border-color: rgba(168, 85, 247, 0.2);"><span style="font-size: 1.5rem;">🎯</span></div>
+                    <h3>远程协作与精准标定</h3>
+                    <p>在屏幕前的操作人员指引特定空间坐标，其运动数据会被即时解析与预测并同步到千公里外的远端机械臂。远端携带的激光笔等工具将实时准确指向同一位置，达到“所见即所指”。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. 竞品对比 -->
+    <section id="comparison">
+        <div class="container">
+            <div class="section-header">
+                <h2>主流技术方案全方位对比</h2>
+                <p>在成本和二次可扩展性上形成绝对的降维打击优势，同时兼顾高实用性的时序预测</p>
+            </div>
+
+            <div class="table-container">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>方案类型</th>
+                            <th>运动跟踪精度</th>
+                            <th>硬件成本开销</th>
+                            <th>生态可扩展性</th>
+                            <th>是否具备趋势预测</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>专业级动捕设备</strong> (XSens/OptiTrack)</td>
+                            <td><span class="star-rating">★★★★★</span></td>
+                            <td style="color: #ef4444; font-weight: 600;">昂贵 &gt; ¥10,000</td>
+                            <td><span class="star-rating">★☆☆</span></td>
+                            <td>❌ 否 (纯原生采样)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>纯视觉算法直出</strong> (PC端运行 MediaPipe)</td>
+                            <td><span class="star-rating">★★☆</span></td>
+                            <td style="color: #22c55e; font-weight: 600;">极低 ~¥100</td>
+                            <td><span class="star-rating">★★☆</span></td>
+                            <td>❌ 否 (无任何前瞻预测)</td>
+                        </tr>
+                        <tr style="background: rgba(99, 102, 241, 0.08); font-weight: 500;">
+                            <td><strong style="color: var(--color-secondary);">本方案系统 (RDK X5+MOSS)</strong></td>
+                            <td><span class="star-rating">★★★★☆</span></td>
+                            <td style="color: var(--color-secondary); font-weight: 600;">适中 ~¥1,000</td>
+                            <td><span class="star-rating">★★★★</span></td>
+                            <td style="color: var(--color-secondary);">✅ <b>是 (时序深度预测)</b></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9. 实施路径时间线 -->
+    <section id="timeline-sec">
+        <div class="container">
+            <div class="section-header">
+                <h2>项目工程化实施路径</h2>
+                <p>清晰、敏捷的阶段性里程碑划分，确保技术开发节奏有条不紊</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <div class="timeline-title">Phase 0：端侧基础感知生态打通</div>
+                            <div class="timeline-time">第 1 - 2 周</div>
+                        </div>
+                        <div class="timeline-body">
+                            全面调通 MediaPipe 与 YOLOv8-pose 算法在 RDK X5 硬件 BPU 上的量化移植。确保底层多点人体骨骼/关键点数据抽取在端侧稳定运行，帧率保持在 <strong>&gt;20fps</strong>。
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <div class="timeline-title">Phase 1：MOSS 核心运动预测模型部署</div>
+                            <div class="timeline-time">第 2 - 3 周</div>
+                        </div>
+                        <div class="timeline-body">
+                            完成长短时序网络模型在 RDK X5 定点 BPU 上的深度部署。完成多维度动作序列平滑、断帧补全、以及趋势预测。核心推理硬核延迟严格控制在 <strong>&lt;15ms</strong> 级别。
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <div class="timeline-title">Phase 2：Skill 能力层与标准 Protocol 设计</div>
+                            <div class="timeline-time">第 1 周</div>
+                        </div>
+                        <div class="timeline-body">
+                            精细化抽象并封装出 <code>motion_output.skill</code> 控制脚本。严格确立标准化轻量级通信数据协议（MotionControl Protocol）。利用极其轻量的 JSON / Protobuf 构造逻辑彻底杜绝架构内耗。
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <div class="timeline-title">Phase 3：下游多模态异构适配器开发</div>
+                            <div class="timeline-time">第 2 周</div>
+                        </div>
+                        <div class="timeline-body">
+                            并行业务开发：撰写对接虚拟主播系统的 VMC 协议适配器，以及控制物理实体的手势控制信号指令适配器（Adapter），检验解耦架构下的快速扩充和即插即用特性。
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <div class="timeline-title">Phase 4：端云大模型协同机制互通 (可选进阶)</div>
+                            <div class="timeline-time">第 2 周</div>
+                        </div>
+                        <div class="timeline-body">
+                            引入云端长周期大语言模型机制。主要打通多模态云端数据转发通道、非实时环境语义高维干预、以及收集端侧冷数据进行全自动离线时序微调升级。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10. 技术亮点强调 -->
+    <section id="highlights">
+        <div class="container">
+            <div class="section-header">
+                <h2>硬核技术亮点汇总</h2>
+                <p>数据沉淀与系统安全性的绝对保障，为高水准的人机协同注入底气</p>
+            </div>
+
+            <div class="highlights-bar-container">
+                <div class="highlight-bar-card">
+                    <div class="stat">10 TOPS</div>
+                    <div class="label">端侧算力实时动作预测</div>
+                </div>
+                <div class="highlight-bar-card">
+                    <div class="stat">&lt; 15ms</div>
+                    <div class="label">MOSS 模型 BPU 推理延迟</div>
+                </div>
+                <div class="highlight-bar-card">
+                    <div class="stat">100%</div>
+                    <div class="label">端侧处理保障隐私与低时延</div>
+                </div>
+                <div class="highlight-bar-card">
+                    <div class="stat">3 模式</div>
+                    <div class="label">支持本地/远程/云端无缝切换</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 11. 结尾页 -->
+    <section class="footer-section">
+        <div class="container">
+            <div class="footer-content">
+                <h2>汇报完毕，恳请各位老师批评指正</h2>
+                <div class="footer-punchline">"人机协同，不再是跟随，而是预判"</div>
+                
+                <div class="contact-box">
+                    <span>项目主导团队：<strong>RDK 端侧 AI 创新小组</strong></span>
+                    <span>指导老师：<strong>计算机学院 机器人实验室</strong></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度学习综合考试试卷 - 考试模式</title>
+<style>
+  :root {
+    --bg: #f8f9fa; --card: #fff; --accent: #2563eb; --accent2: #1e40af;
+    --border: #e2e8f0; --text: #1e293b; --muted: #64748b; --code-bg: #f1f5f9;
+    --green: #16a34a; --red: #dc2626; --orange: #ea580c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif; background:var(--bg); color:var(--text); line-height:1.8; }
+  .container { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+
+  /* 试卷头 */
+  .header { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; border-radius: 12px; padding: 36px 40px; margin-bottom: 32px; }
+  .header h1 { font-size: 28px; margin-bottom: 8px; letter-spacing: 2px; text-align: center; }
+  .header .meta { font-size: 14px; opacity: .85; display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; }
+  .header .meta span { display: flex; align-items: center; gap: 6px; }
+  .timer { background: rgba(255,255,255,0.2); padding: 6px 16px; border-radius: 20px; }
+  .timer.warning { background: rgba(239,68,68,0.8); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+  /* 分值概览 */
+  .overview { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+  .overview .chip { flex: 1; min-width: 180px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; text-align: center; }
+  .overview .chip .label { font-size: 13px; color: var(--muted); }
+  .overview .chip .value { font-size: 22px; font-weight: 700; color: var(--accent); }
+
+  /* 进度条 */
+  .progress-bar { height: 8px; background: var(--border); border-radius: 4px; margin-bottom: 24px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green)); transition: width 0.3s ease; }
+
+  /* 大题标题 */
+  .section-title { background: var(--card); border-left: 4px solid var(--accent); padding: 14px 20px; margin: 36px 0 20px; border-radius: 0 8px 8px 0; font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .section-title .score { font-size: 14px; color: var(--muted); font-weight: 400; }
+
+  /* 题目卡片 */
+  .question { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 20px; }
+  .question .q-head { font-weight: 700; color: var(--accent2); margin-bottom: 10px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+  .question .q-body { margin-bottom: 12px; }
+  .question .q-body p { margin: 6px 0; }
+  .question .options { margin: 8px 0 8px 8px; }
+  .question .options p { margin: 4px 0; padding-left: 4px; }
+
+  /* 代码块 */
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 12px 0; }
+  code { font-family: "JetBrains Mono","Fira Code","Consolas",monospace; font-size: 13.5px; }
+  p code, li code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+  /* 答题区域 */
+  .answer-area { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border); }
+  .answer-label { font-weight: 600; color: var(--accent); margin-bottom: 10px; font-size: 14px; }
+  
+  /* 选择题选项 */
+  .choice-option { display: flex; align-items: flex-start; padding: 10px 14px; margin-bottom: 8px; border: 2px solid transparent; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .choice-option:hover { background: #f8fafc; border-color: var(--border); }
+  .choice-option.selected { background: #eff6ff; border-color: var(--accent); }
+  .choice-option input[type="radio"] { margin-right: 10px; margin-top: 4px; transform: scale(1.2); }
+  .choice-option label { cursor: pointer; flex: 1; }
+
+  /* 填空题输入 */
+  .fill-input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; margin-bottom: 10px; font-family: monospace; }
+  .fill-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+  /* 判断题 */
+  .true-false-options { display: flex; gap: 16px; }
+  .tf-btn { padding: 10px 24px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+  .tf-btn:hover { border-color: var(--accent); }
+  .tf-btn.selected { background: var(--accent); color: white; border-color: var(--accent); }
+  .tf-btn.true.selected { background: var(--green); border-color: var(--green); }
+  .tf-btn.false.selected { background: var(--red); border-color: var(--red); }
+
+  /* 提交按钮 */
+  .submit-section { text-align: center; margin-top: 40px; padding: 24px; background: var(--card); border-radius: 12px; }
+  .submit-btn { padding: 16px 48px; font-size: 18px; font-weight: 700; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .submit-btn:hover { background: var(--accent2); transform: translateY(-2px); }
+  .submit-btn:disabled { background: var(--muted); cursor: not-allowed; transform: none; }
+
+  /* 子题编号 */
+  .sub-q { margin: 8px 0 8px 4px; }
+  .sub-q p { margin: 4px 0; }
+  .sub-q label { display: block; margin-bottom: 6px; font-weight: 500; }
+
+  /* 解析区域 */
+  .analysis-area { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); display: none; }
+  .analysis-area.show { display: block; }
+  .analysis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .analysis-title { font-weight: 600; font-size: 14px; }
+  .analysis-status { padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; }
+  .analysis-status.correct { background: #dcfce7; color: #166534; }
+  .analysis-status.wrong { background: #fee2e2; color: #991b1b; }
+  .analysis-content { background: #fafafa; border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.7; }
+  .analysis-content p { margin: 8px 0; }
+  .analysis-content code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .correct-answer { color: var(--green); font-weight: 600; }
+
+  /* 结果弹窗 */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+  .modal-overlay.show { display: flex; }
+  .result-modal { background: white; border-radius: 16px; padding: 32px; max-width: 500px; width: 90%; text-align: center; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .result-modal h2 { font-size: 24px; margin-bottom: 20px; color: var(--text); }
+  .score-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 36px; font-weight: 700; }
+  .score-circle.excellent { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+  .score-circle.good { background: linear-gradient(135deg, #2563eb, #1e40af); color: white; }
+  .score-circle.pass { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+  .score-circle.fail { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+  .result-stats { display: flex; justify-content: center; gap: 32px; margin-bottom: 24px; }
+  .stat-item .label { font-size: 13px; color: var(--muted); }
+  .stat-item .value { font-size: 20px; font-weight: 700; }
+  .result-modal button { padding: 12px 32px; font-size: 16px; font-weight: 600; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; }
+
+  /* 页脚 */
+  .footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 48px; padding: 20px 0; border-top: 1px solid var(--border); }
+
+  /* 打印优化 */
+  @media print {
+    body { background: #fff; }
+    .container { max-width: 100%; padding: 0; }
+    .header { break-after: avoid; }
+    .question { break-inside: avoid; }
+    .timer, .submit-section, .modal-overlay { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ==================== 试卷头 ==================== -->
+<div class="header">
+  <h1>深度学习综合考试试卷</h1>
+  <div class="meta">
+    <span>总分：100 分</span>
+    <span>|</span>
+    <span class="timer" id="timer">剩余时间：120:00</span>
+    <span>|</span>
+    <span>2026 年春季学期</span>
+  </div>
+</div>
+
+<!-- 进度条 -->
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<!-- 分值概览 -->
+<div class="overview">
+  <div class="chip"><div class="label">一、选择题与判断题</div><div class="value">10 分</div></div>
+  <div class="chip"><div class="label">二、代码分析题</div><div class="value">50 分</div></div>
+  <div class="chip"><div class="label">三、计算题</div><div class="value">24 分</div></div>
+  <div class="chip"><div class="label">四、综合分析题</div><div class="value">16 分</div></div>
+</div>
+
+
+<!-- ================================================================ -->
+<!--                     一、选择题与判断题（10 分）                    -->
+<!-- ================================================================ -->
+<div class="section-title">一、选择题与判断题<span class="score">共 5 小题，每题 2 分，共 10 分</span></div>
+
+<!-- 选择题 1 -->
+<div class="question">
+  <div class="q-head">第 1 题（单选 · 2 分）—— 损失函数</div>
+  <div class="q-body">
+    <p>PyTorch 中 <code>nn.CrossEntropyLoss()</code> 内部包含了什么操作？</p>
+    <div class="answer-area">
+      <div class="answer-label">请选择：</div>
+      <div class="choice-option" onclick="selectChoice('q1', 'A')">
+        <input type="radio" name="q1" id="q1_A" value="A">
+        <label for="q1_A">A. Softmax + MSELoss</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q1', 'B')">
+        <input type="radio" name="q1" id="q1_B" value="B">
+        <label for="q1_B">B. LogSoftmax + NLLLoss</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q1', 'C')">
+        <input type="radio" name="q1" id="q1_C" value="C">
+        <label for="q1_C">C. Sigmoid + BCELoss</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q1', 'D')">
+        <input type="radio" name="q1" id="q1_D" value="D">
+        <label for="q1_D">D. Softmax + NLLLoss</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 选择题 2 -->
+<div class="question">
+  <div class="q-head">第 2 题（单选 · 2 分）—— 激活函数</div>
+  <div class="q-body">
+    <p>在一个很深的网络中，以下哪项组合<strong>最容易</strong>导致梯度消失？</p>
+    <div class="answer-area">
+      <div class="answer-label">请选择：</div>
+      <div class="choice-option" onclick="selectChoice('q2', 'A')">
+        <input type="radio" name="q2" id="q2_A" value="A">
+        <label for="q2_A">A. ReLU + BatchNorm</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q2', 'B')">
+        <input type="radio" name="q2" id="q2_B" value="B">
+        <label for="q2_B">B. Sigmoid + 无正则化</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q2', 'C')">
+        <input type="radio" name="q2" id="q2_C" value="C">
+        <label for="q2_C">C. LeakyReLU + 残差连接</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q2', 'D')">
+        <input type="radio" name="q2" id="q2_D" value="D">
+        <label for="q2_D">D. GELU + LayerNorm</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 选择题 3 -->
+<div class="question">
+  <div class="q-head">第 3 题（单选 · 2 分）—— Transformer</div>
+  <div class="q-body">
+    <p>以下哪种模型是<strong>自回归</strong>的？</p>
+    <div class="answer-area">
+      <div class="answer-label">请选择：</div>
+      <div class="choice-option" onclick="selectChoice('q3', 'A')">
+        <input type="radio" name="q3" id="q3_A" value="A">
+        <label for="q3_A">A. BERT</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q3', 'B')">
+        <input type="radio" name="q3" id="q3_B" value="B">
+        <label for="q3_B">B. GPT</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q3', 'C')">
+        <input type="radio" name="q3" id="q3_C" value="C">
+        <label for="q3_C">C. ViT</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q3', 'D')">
+        <input type="radio" name="q3" id="q3_D" value="D">
+        <label for="q3_D">D. SimCLR</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 选择题 4 -->
+<div class="question">
+  <div class="q-head">第 4 题（单选 · 2 分）—— 优化器</div>
+  <div class="q-body">
+    <p>SGD 与 Adam 的主要区别是什么？</p>
+    <div class="answer-area">
+      <div class="answer-label">请选择：</div>
+      <div class="choice-option" onclick="selectChoice('q4', 'A')">
+        <input type="radio" name="q4" id="q4_A" value="A">
+        <label for="q4_A">A. SGD 比 Adam 收敛速度一定更快</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q4', 'B')">
+        <input type="radio" name="q4" id="q4_B" value="B">
+        <label for="q4_B">B. Adam 使用动量 + 自适应学习率；SGD 通常需要手动调学习率</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q4', 'C')">
+        <input type="radio" name="q4" id="q4_C" value="C">
+        <label for="q4_C">C. SGD 不需要学习率</label>
+      </div>
+      <div class="choice-option" onclick="selectChoice('q4', 'D')">
+        <input type="radio" name="q4" id="q4_D" value="D">
+        <label for="q4_D">D. Adam 只能用于 CNN</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 判断题 5 -->
+<div class="question">
+  <div class="q-head">第 5 题（判断 · 2 分）—— 多头注意力</div>
+  <div class="q-body">
+    <p>判断下列说法是否正确：</p>
+    <p style="margin-top:8px; padding:10px 16px; background:#fef3c7; border-radius:6px; border-left:3px solid #f59e0b;">
+      "Multi-Head Attention 就是把输入复制 h 份，分别算 h 次 Self-Attention，然后取平均。"
+    </p>
+    <div class="answer-area">
+      <div class="answer-label">请判断：</div>
+      <div class="true-false-options">
+        <div class="tf-btn true" onclick="selectTF('q5', true)">正确</div>
+        <div class="tf-btn false" onclick="selectTF('q5', false)">错误</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!--                     二、代码分析题（50 分）                        -->
+<!-- ================================================================ -->
+<div class="section-title">二、代码分析题<span class="score">共 7 小题，共 50 分</span></div>
+
+<!-- 代码分析 1 -->
+<div class="question">
+  <div class="q-head">第 6 题（8 分）—— PyTorch 训练循环</div>
+  <div class="q-body">
+    <p>以下代码有什么问题？请指出并解释原因。</p>
+<pre><code>for x, y in loader:
+    output = model(x)
+    loss = criterion(output, y)
+    loss.backward()
+    optimizer.step()</code></pre>
+    <div class="sub-q">
+      <p>(1) 缺少了什么关键步骤？会导致什么后果？（3 分）</p>
+      <p>(2) <code>model.train()</code> 和 <code>model.eval()</code> 分别影响哪些层？具体怎么影响？（3 分）</p>
+      <p>(3) <code>with torch.no_grad()</code> 是必须的吗？不写会怎样？（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1)</label><textarea class="fill-input" id="q6_1" rows="3" placeholder="请输入你的答案..."></textarea>
+      <label>(2)</label><textarea class="fill-input" id="q6_2" rows="3" placeholder="请输入你的答案..."></textarea>
+      <label>(3)</label><textarea class="fill-input" id="q6_3" rows="2" placeholder="请输入你的答案..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 代码分析 2 -->
+<div class="question">
+  <div class="q-head">第 7 题（6 分）—— 模型识别</div>
+  <div class="q-body">
+    <p>阅读以下三个代码片段，分别判断是什么类型的模型，用于什么任务。</p>
+<pre><code># 模型 A
+self.embed = nn.Embedding(5000, 100)
+self.lstm = nn.LSTM(100, 128, 2, batch_first=True)
+self.fc = nn.Linear(128, 5000)</code></pre>
+<pre><code># 模型 B
+self.conv = nn.Conv2d(3, 64, 3, padding=1)
+self.bn = nn.BatchNorm2d(64)
+self.fc = nn.Linear(64 * 8 * 8, 10)</code></pre>
+<pre><code># 模型 C
+self.attn = nn.MultiheadAttention(256, 8, batch_first=True)
+self.norm = nn.LayerNorm(256)
+self.ffn = nn.Sequential(nn.Linear(256, 1024), nn.ReLU(), nn.Linear(1024, 256))</code></pre>
+    <div class="sub-q">
+      <p>(1) 模型 A 是什么？用于什么任务？（2 分）</p>
+      <p>(2) 模型 B 是什么？用于什么任务？（2 分）</p>
+      <p>(3) 模型 C 是什么？用于什么任务？（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1)</label><input type="text" class="fill-input" id="q7_1" placeholder="请输入你的答案...">
+      <label>(2)</label><input type="text" class="fill-input" id="q7_2" placeholder="请输入你的答案...">
+      <label>(3)</label><input type="text" class="fill-input" id="q7_3" placeholder="请输入你的答案...">
+    </div>
+  </div>
+</div>
+
+<!-- 代码分析 3 -->
+<div class="question">
+  <div class="q-head">第 8 题（10 分）—— 完整代码分析：PoetryModel</div>
+  <div class="q-body">
+<pre><code>class PoetryModel(nn.Module):
+    def __init__(self, vocab_size=5000, embed_dim=100, hidden_dim=128):
+        super().__init__()
+        self.embed = nn.Embedding(vocab_size, embed_dim)
+        self.lstm = nn.LSTM(embed_dim, hidden_dim, num_layers=2,
+                            batch_first=True, dropout=0.3)
+        self.mlp = nn.Sequential(
+            nn.Dropout(0.3),
+            nn.Linear(hidden_dim, 512),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(512, vocab_size)
+        )
+        self.log_softmax = nn.LogSoftmax(dim=-1)
+
+    def forward(self, x, is_test=False):
+        batch_size = x.size(0)
+        embed = self.embed(x)
+        h0 = torch.zeros(2, batch_size, 128, device=x.device)
+        c0 = torch.zeros(2, batch_size, 128, device=x.device)
+        out, _ = self.lstm(embed, (h0, c0))
+        if is_test:
+            out = out[:, -1, :]
+        out = self.mlp(out)
+        return self.log_softmax(out)</code></pre>
+    <div class="sub-q">
+      <p>(1) 这是什么网络？用于什么任务？（2 分）</p>
+      <p>(2) 模型用了哪些正则化技术？指出代码中的具体位置。（2 分）</p>
+      <p>(3) <code>h0</code> 的第一个维度为什么是 2？（2 分）</p>
+      <p>(4) <code>is_test=True</code> 时 <code>out[:, -1, :]</code> 的作用是什么？（2 分）</p>
+      <p>(5) 为什么输出用 <code>LogSoftmax</code> 而不是 <code>Softmax</code>？配合什么损失函数？（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1)</label><input type="text" class="fill-input" id="q8_1" placeholder="请输入你的答案...">
+      <label>(2)</label><textarea class="fill-input" id="q8_2" rows="2" placeholder="请输入你的答案..."></textarea>
+      <label>(3)</label><input type="text" class="fill-input" id="q8_3" placeholder="请输入你的答案...">
+      <label>(4)</label><input type="text" class="fill-input" id="q8_4" placeholder="请输入你的答案...">
+      <label>(5)</label><textarea class="fill-input" id="q8_5" rows="2" placeholder="请输入你的答案..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 代码分析 4 -->
+<div class="question">
+  <div class="q-head">第 9 题（8 分）—— Numpy 矩阵运算</div>
+  <div class="q-body">
+<pre><code>import numpy as np
+
+a = np.array([[1, 2, 3], [4, 5, 6]])      # shape: (2, 3)
+b = np.array([[7, 8], [9, 10], [11, 12]])  # shape: (3, 2)
+c = np.dot(a, b)                            # 矩阵乘法
+d = a.reshape(3, 2)                         # 重新排列
+e = a.T                                     # 转置
+f = a.sum(axis=0)                           # 求和</code></pre>
+    <div class="sub-q">
+      <p>(1) 写出 c 的值和 c.shape。（3 分）</p>
+      <p>(2) <code>a.reshape(3, 2)</code> 和 <code>a.T</code> 的结果有什么不同？（2 分）</p>
+      <p>(3) <code>a.sum(axis=0)</code> 和 <code>a.sum(axis=1)</code> 的区别是什么？（3 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1) c的值：</label><input type="text" class="fill-input" id="q9_1a" placeholder="例如：[[x,y],[z,w]]">
+      <label>(1) c.shape：</label><input type="text" class="fill-input" id="q9_1b" placeholder="例如：(x,y)">
+      <label>(2)</label><textarea class="fill-input" id="q9_2" rows="2" placeholder="请输入你的答案..."></textarea>
+      <label>(3)</label><textarea class="fill-input" id="q9_3" rows="2" placeholder="请输入你的答案..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 代码分析 5 -->
+<div class="question">
+  <div class="q-head">第 10 题（6 分）—— Softmax 实现分析</div>
+  <div class="q-body">
+<pre><code>import numpy as np
+
+def softmax(x):
+    e_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
+    return e_x / np.sum(e_x, axis=-1, keepdims=True)
+
+logits = np.array([2.0, 1.0, 0.1])
+probs = softmax(logits)</code></pre>
+    <div class="sub-q">
+      <p>(1) 为什么要减去 <code>np.max(x)</code>？（2 分）</p>
+      <p>(2) <code>keepdims=True</code> 的作用是什么？（2 分）</p>
+      <p>(3) probs 各元素之和是多少？（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1)</label><input type="text" class="fill-input" id="q10_1" placeholder="请输入你的答案...">
+      <label>(2)</label><input type="text" class="fill-input" id="q10_2" placeholder="请输入你的答案...">
+      <label>(3)</label><input type="text" class="fill-input" id="q10_3" placeholder="请输入你的答案...">
+    </div>
+  </div>
+</div>
+
+<!-- 代码分析 6 -->
+<div class="question">
+  <div class="q-head">第 11 题（6 分）—— PyTorch 张量操作</div>
+  <div class="q-body">
+<pre><code>import torch
+
+x = torch.randn(2, 3, 224, 224)   # (batch, channel, height, width)
+y = x.view(2, -1)                  # 展平
+z = x.permute(0, 2, 3, 1)         # 调整维度顺序</code></pre>
+    <div class="sub-q">
+      <p>(1) y 的 shape 是什么？<code>-1</code> 的含义是什么？（2 分）</p>
+      <p>(2) <code>view</code> 和 <code>permute</code>（或 <code>transpose</code>）有什么本质区别？（2 分）</p>
+      <p>(3) z 的 shape 是什么？（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1) y.shape：</label><input type="text" class="fill-input" id="q11_1a" placeholder="例如：(x,y)">
+      <label>(1) -1 的含义：</label><input type="text" class="fill-input" id="q11_1b" placeholder="请输入你的答案...">
+      <label>(2)</label><input type="text" class="fill-input" id="q11_2" placeholder="请输入你的答案...">
+      <label>(3) z.shape：</label><input type="text" class="fill-input" id="q11_3" placeholder="例如：(x,y,z,w)">
+    </div>
+  </div>
+</div>
+
+<!-- 代码分析 7 -->
+<div class="question">
+  <div class="q-head">第 12 题（6 分）—— 常见代码错误排查</div>
+  <div class="q-body">
+<pre><code>class MyModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.fc = nn.Linear(256, 10)
+
+    def forward(self, x):
+        x = self.fc(x)
+        x = F.softmax(x, dim=1)    # ← 注意这一行
+        return x
+
+model = MyModel()
+criterion = nn.CrossEntropyLoss()
+
+# 训练
+output = model(images)
+loss = criterion(output, labels)   # ← 这里有什么问题？</code></pre>
+    <div class="sub-q">
+      <p>(1) 这段代码有什么问题？会导致什么现象？（4 分）</p>
+      <p>(2) 如何修复？（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1)</label><textarea class="fill-input" id="q12_1" rows="2" placeholder="请输入你的答案..."></textarea>
+      <label>(2)</label><input type="text" class="fill-input" id="q12_2" placeholder="请输入你的答案...">
+    </div>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!--                     三、计算题（24 分）                            -->
+<!-- ================================================================ -->
+<div class="section-title">三、计算题<span class="score">共 5 小题，共 24 分</span></div>
+
+<!-- 计算 1 -->
+<div class="question">
+  <div class="q-head">第 13 题（6 分）—— DNN 参数量计算</div>
+  <div class="q-body">
+    <p>一个 3 层 DNN 结构如下：</p>
+    <p style="text-align:center; margin:12px 0; font-size:15px;"><code>Linear(784→256) → ReLU → Linear(256→128) → ReLU → Linear(128→10)</code></p>
+    <div class="sub-q">
+      <p>(1) 计算每一层的参数量（含 bias）。（3 分）</p>
+      <p>(2) 总参数量是多少？（1 分）</p>
+      <p>(3) 写出全连接层参数量的通用公式。（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1) Layer 1：</label><input type="text" class="fill-input" id="q13_1a" placeholder="例如：123456">
+      <label>(1) Layer 2：</label><input type="text" class="fill-input" id="q13_1b" placeholder="例如：123456">
+      <label>(1) Layer 3：</label><input type="text" class="fill-input" id="q13_1c" placeholder="例如：123456">
+      <label>(2) 总参数量：</label><input type="text" class="fill-input" id="q13_2" placeholder="例如：123456">
+      <label>(3) 通用公式：</label><input type="text" class="fill-input" id="q13_3" placeholder="请输入公式...">
+    </div>
+  </div>
+</div>
+
+<!-- 计算 2 -->
+<div class="question">
+  <div class="q-head">第 14 题（6 分）—— CNN 输出尺寸与参数量</div>
+  <div class="q-body">
+    <p>已知输入为 32×32×3 的 RGB 图像，经过以下卷积层：</p>
+    <p style="text-align:center; margin:12px 0; font-size:15px;"><code>Conv2d(in_channels=3, out_channels=64, kernel_size=3, padding=1, stride=1)</code></p>
+    <div class="sub-q">
+      <p>(1) 写出卷积输出尺寸的通用公式，并计算该层的输出尺寸。（3 分）</p>
+      <p>(2) 计算该卷积层的参数量（含 bias）。（3 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1) 通用公式：</label><input type="text" class="fill-input" id="q14_1a" placeholder="请输入公式...">
+      <label>(1) 输出尺寸：</label><input type="text" class="fill-input" id="q14_1b" placeholder="例如：(C,H,W)">
+      <label>(2) 参数量：</label><input type="text" class="fill-input" id="q14_2" placeholder="例如：123456">
+    </div>
+  </div>
+</div>
+
+<!-- 计算 3 -->
+<div class="question">
+  <div class="q-head">第 15 题（4 分）—— LSTM 参数量</div>
+  <div class="q-body">
+    <p>一个单层单向 LSTM，<code>input_size=128</code>，<code>hidden_size=256</code>，<code>bias=False</code>。</p>
+    <div class="sub-q">
+      <p>(1) 该 LSTM 有多少组参数矩阵？列出它们的名称。（2 分）</p>
+      <p>(2) 计算总参数量。（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1)</label><textarea class="fill-input" id="q15_1" rows="2" placeholder="请输入你的答案..."></textarea>
+      <label>(2) 总参数量：</label><input type="text" class="fill-input" id="q15_2" placeholder="例如：123456">
+    </div>
+  </div>
+</div>
+
+<!-- 计算 4 -->
+<div class="question">
+  <div class="q-head">第 16 题（4 分）—— 特征图下采样</div>
+  <div class="q-body">
+    <p>输入图像尺寸 224×224，经过以下操作：</p>
+    <p style="text-align:center; margin:12px 0;"><code>MaxPool2d(kernel=2, stride=2)</code> → <code>MaxPool2d(kernel=2, stride=2)</code> → <code>MaxPool2d(kernel=2, stride=2)</code></p>
+    <div class="sub-q">
+      <p>(1) 写出每一步之后的特征图尺寸。（2 分）</p>
+      <p>(2) 若在上述 3 次池化后再做一次 <code>Conv2d(kernel=3, stride=1, padding=0)</code>，输出尺寸是多少？（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1) 各步尺寸：</label><input type="text" class="fill-input" id="q16_1" placeholder="例如：224 → 112 → 56 → 28">
+      <label>(2) 最终输出尺寸：</label><input type="text" class="fill-input" id="q16_2" placeholder="例如：XX×XX">
+    </div>
+  </div>
+</div>
+
+<!-- 计算 5 -->
+<div class="question">
+  <div class="q-head">第 17 题（4 分）—— Multi-Head Attention 维度计算</div>
+  <div class="q-body">
+    <p>输入 x 的 shape 为 (32, 50, 256)，送入 <code>MultiheadAttention(n_heads=8, d_model=256)</code>。</p>
+    <div class="sub-q">
+      <p>(1) 每个头的 d<sub>k</sub> 是多少？（1 分）</p>
+      <p>(2) 注意力矩阵（attention scores）的 shape 是什么？解释每个维度的含义。（2 分）</p>
+      <p>(3) 输出的 shape 是什么？（1 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1) d_k：</label><input type="text" class="fill-input" id="q17_1" placeholder="例如：32">
+      <label>(2) attention scores shape：</label><input type="text" class="fill-input" id="q17_2" placeholder="例如：(B,H,Q,K)">
+      <label>(3) 输出 shape：</label><input type="text" class="fill-input" id="q17_3" placeholder="例如：(B,L,D)">
+    </div>
+  </div>
+</div>
+
+
+<!-- ================================================================ -->
+<!--                     四、综合分析题（16 分）                         -->
+<!-- ================================================================ -->
+<div class="section-title">四、综合分析题<span class="score">共 3 小题，共 16 分</span></div>
+
+<!-- 分析 1 -->
+<div class="question">
+  <div class="q-head">第 18 题（6 分）—— ResNet 残差连接</div>
+  <div class="q-body">
+    <p>ResNet 的核心公式为 H(x) = F(x) + x，其中 F(x) 是卷积块学到的残差映射。</p>
+    <div class="sub-q">
+      <p>(1) "残差"（Residual）具体指的是什么？（2 分）</p>
+      <p>(2) 从梯度传播的角度，解释为什么残差连接能缓解梯度消失。（2 分）</p>
+      <p>(3) 如果去掉跳跃连接，ResNet 会退化成什么？为什么 ResNet 可以堆叠到 152 层而 VGG 最深只有 19 层？（2 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1)</label><textarea class="fill-input" id="q18_1" rows="2" placeholder="请输入你的答案..."></textarea>
+      <label>(2)</label><textarea class="fill-input" id="q18_2" rows="2" placeholder="请输入你的答案..."></textarea>
+      <label>(3)</label><textarea class="fill-input" id="q18_3" rows="2" placeholder="请输入你的答案..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- 分析 2 -->
+<div class="question">
+  <div class="q-head">第 19 题（5 分）—— LSTM 门控机制</div>
+  <div class="q-body">
+    <p>LSTM 通过门控机制解决了 SimpleRNN 的梯度消失问题。</p>
+    <div class="sub-q">
+      <p>(1) LSTM 有哪三个门？各用什么激活函数？为什么用这个激活函数？（2 分）</p>
+      <p>(2) 细胞状态 c<sub>t</sub> 和隐藏状态 h<sub>t</sub> 分别扮演什么角色？（2 分）</p>
+      <p>(3) 从梯度流动的角度，解释为什么 LSTM 比 SimpleRNN 更能缓解梯度消失。（1 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1)</label><textarea class="fill-input" id="q19_1" rows="2" placeholder="请输入你的答案..."></textarea>
+      <label>(2)</label><textarea class="fill-input" id="q19_2" rows="2" placeholder="请输入你的答案..."></textarea>
+      <label>(3)</label><input type="text" class="fill-input" id="q19_3" placeholder="请输入你的答案...">
+    </div>
+  </div>
+</div>
+
+<!-- 分析 3 -->
+<div class="question">
+  <div class="q-head">第 20 题（5 分）—— 过拟合诊断与处理</div>
+  <div class="q-body">
+    <p>你在训练一个图像分类模型，观察到以下现象：</p>
+    <p style="margin:12px 0; padding:12px 16px; background:#fef2f2; border-radius:6px; border-left:3px solid var(--red);">
+      train_loss = 0.05（很低），val_loss = 0.80（很高）
+    </p>
+    <div class="sub-q">
+      <p>(1) 模型发生了什么？请诊断。（1 分）</p>
+      <p>(2) 列举至少 4 种解决此问题的方法，并简要说明原理。（4 分）</p>
+    </div>
+    <div class="answer-area">
+      <div class="answer-label">请作答：</div>
+      <label>(1)</label><input type="text" class="fill-input" id="q20_1" placeholder="请输入你的答案...">
+      <label>(2)</label><textarea class="fill-input" id="q20_2" rows="4" placeholder="请输入你的答案..."></textarea>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== 提交区域 ==================== -->
+<div class="submit-section">
+  <p style="color:var(--muted); margin-bottom:16px;">已答题目：<span id="answeredCount">0</span>/20</p>
+  <button class="submit-btn" id="submitBtn" onclick="submitExam()">提交试卷</button>
+</div>
+
+<!-- ==================== 页脚 ==================== -->
+<div class="footer">
+  <p>— 试卷结束 · 总分 100 分 —</p>
+  <p style="margin-top:6px;">基于深度学习题库组卷 · 覆盖神经网络基础 / CNN / RNN·LSTM / Transformer / 综合概念</p>
+</div>
+
+<!-- 结果弹窗 -->
+<div class="modal-overlay" id="resultModal">
+  <div class="result-modal">
+    <h2>考试完成！</h2>
+    <div class="score-circle" id="scoreCircle">0</div>
+    <div class="result-stats">
+      <div class="stat-item"><div class="label">得分</div><div class="value" id="finalScore">0/100</div></div>
+      <div class="stat-item"><div class="label">正确率</div><div class="value" id="accuracy">0%</div></div>
+      <div class="stat-item"><div class="label">用时</div><div class="value" id="timeUsed">0分</div></div>
+    </div>
+    <button onclick="closeModal()">关闭</button>
+  </div>
+</div>
+
+</div><!-- /.container -->
+
+<script>
+// 计时器
+let timeLeft = 120 * 60; // 120分钟
+let timerInterval;
+
+function updateTimer() {
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const timerEl = document.getElementById('timer');
+  timerEl.textContent = `剩余时间：${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  
+  // 最后10分钟警告
+  if (timeLeft <= 600) {
+    timerEl.classList.add('warning');
+  }
+  
+  if (timeLeft <= 0) {
+    clearInterval(timerInterval);
+    submitExam();
+  }
+  timeLeft--;
+}
+
+// 选择答案
+function selectChoice(qId, value) {
+  document.querySelectorAll(`input[name="${qId}"]`).forEach(el => el.checked = false);
+  document.getElementById(`${qId}_${value}`).checked = true;
+  
+  document.querySelectorAll(`.choice-option`).forEach(el => el.classList.remove('selected'));
+  event.target.classList.add('selected');
+  
+  updateProgress();
+}
+
+// 判断题选择
+function selectTF(qId, isTrue) {
+  document.querySelectorAll(`.tf-btn[data-q="${qId}"]`).forEach(el => el.classList.remove('selected'));
+  
+  const btns = document.querySelectorAll('.tf-btn');
+  btns.forEach(btn => {
+    if (btn.textContent === (isTrue ? '正确' : '错误')) {
+      btn.classList.add('selected');
+    }
+  });
+  
+  localStorage.setItem(qId, isTrue ? 'true' : 'false');
+  updateProgress();
+}
+
+// 更新进度
+function updateProgress() {
+  let answered = 0;
+  
+  // 选择题
+  ['q1', 'q2', 'q3', 'q4'].forEach(q => {
+    if (document.querySelector(`input[name="${q}"]:checked`)) answered++;
+  });
+  
+  // 判断题
+  if (localStorage.getItem('q5')) answered++;
+  
+  // 填空题（有输入即为作答）
+  const inputs = document.querySelectorAll('.fill-input');
+  inputs.forEach(input => {
+    if (input.value.trim()) answered++;
+  });
+  
+  document.getElementById('answeredCount').textContent = Math.min(answered, 20);
+  
+  // 更新进度条
+  const progress = (answered / 20) * 100;
+  document.getElementById('progressFill').style.width = `${Math.min(progress, 100)}%`;
+}
+
+// 自动保存答题进度
+document.addEventListener('input', updateProgress);
+
+// 参考答案（用于评分）
+const answers = {
+  q1: 'B', q2: 'B', q3: 'B', q4: 'B', q5: 'false',
+  q6_1: /zero_grad|清除梯度/i, q6_2: /Dropout|BatchNorm/i, q6_3: /显存|内存/i,
+  q7_1: /LSTM|语言模型|文本生成/i, q7_2: /CNN|图像分类/i, q7_3: /Transformer|Encoder/i,
+  q8_1: /LSTM|诗歌|语言模型/i, q8_2: /dropout/i, q8_3: /num_layers|层数/i,
+  q8_4: /最后|最后一个|[-1]/i, q8_5: /NLLLoss|log/i,
+  q9_1a: /58.*64.*139.*154/i, q9_1b: /2, 2/i, q9_2: /reshape|转置/i, q9_3: /axis|行|列/i,
+  q10_1: /溢出|上溢|数值稳定/i, q10_2: /广播|维度/i, q10_3: /1\.0|1/i,
+  q11_1a: /2.*150528/i, q11_1b: /自动推断|自动计算/i, q11_2: /view|permute|连续/i, q11_3: /2.*224.*224.*3/i,
+  q12_1: /双重|Softmax/i, q12_2: /去掉|删除|softmax/i,
+  q13_1a: /200960/i, q13_1b: /32896/i, q13_1c: /1290/i, q13_2: /235146/i, q13_3: /Din.*Dout|输入.*输出/i,
+  q14_1a: /Hout|Hin.*K.*P.*S/i, q14_1b: /64.*32.*32/i, q14_2: /1792/i,
+  q15_1: /8|遗忘门|输入门|输出门|候选/i, q15_2: /393216/i,
+  q16_1: /112.*56.*28/i, q16_2: /26/i,
+  q17_1: /32/i, q17_2: /32.*8.*50.*50/i, q17_3: /32.*50.*256/i,
+  q18_1: /F\(x\)|H\(x\)-x|残差/i, q18_2: /梯度|1|\+1/i, q18_3: /普通|VGG|梯度消失/i,
+  q19_1: /遗忘门|输入门|输出门|sigmoid/i, q19_2: /长期|短期|记忆|c_t|h_t/i, q19_3: /线性|细胞状态/i,
+  q20_1: /过拟合/i, q20_2: /数据增强|dropout|L2|早停|正则化/i
+};
+
+// 评分标准
+const scores = {
+  q1: 2, q2: 2, q3: 2, q4: 2, q5: 2,
+  q6_1: 3, q6_2: 3, q6_3: 2,
+  q7_1: 2, q7_2: 2, q7_3: 2,
+  q8_1: 2, q8_2: 2, q8_3: 2, q8_4: 2, q8_5: 2,
+  q9_1a: 2, q9_1b: 1, q9_2: 2, q9_3: 3,
+  q10_1: 2, q10_2: 2, q10_3: 2,
+  q11_1a: 1, q11_1b: 1, q11_2: 2, q11_3: 2,
+  q12_1: 4, q12_2: 2,
+  q13_1a: 1, q13_1b: 1, q13_1c: 1, q13_2: 1, q13_3: 2,
+  q14_1a: 2, q14_1b: 1, q14_2: 3,
+  q15_1: 2, q15_2: 2,
+  q16_1: 2, q16_2: 2,
+  q17_1: 1, q17_2: 2, q17_3: 1,
+  q18_1: 2, q18_2: 2, q18_3: 2,
+  q19_1: 2, q19_2: 2, q19_3: 1,
+  q20_1: 1, q20_2: 4
+};
+
+// 解析数据
+const analysis = {
+  q1: {
+    correct: 'B',
+    content: '<p><strong>答案：B</strong></p><p><code>CrossEntropyLoss</code> = <code>LogSoftmax</code> + <code>NLLLoss</code>。因此模型输出（logits）不需要再手动加 Softmax，否则会造成"双重 Softmax"，使输出趋近均匀分布，loss 卡在 ≈ 2.3026 不下降。</p>'
+  },
+  q2: {
+    correct: 'B',
+    content: '<p><strong>答案：B</strong></p><p>Sigmoid 的导数最大值为 0.25，深网络中链式求导时连乘 (0.25)^N → 梯度极快趋近于 0。没有 BatchNorm 或残差连接来辅助梯度传播，问题更加严重。</p>'
+  },
+  q3: {
+    correct: 'B',
+    content: '<p><strong>答案：B</strong></p><p>GPT 是 Decoder-Only 架构，采用自回归方式（左→右逐 token 预测下一个 token）。BERT 是双向的 Masked Language Model，ViT 是图像编码器不做生成，SimCLR 是对比学习框架。</p>'
+  },
+  q4: {
+    correct: 'B',
+    content: '<p><strong>答案：B</strong></p><p>Adam 结合了 Momentum（动量）和 RMSProp（自适应学习率）的优点，对超参数不敏感、收敛快。SGD 需要手工设计学习率和调度策略，但精心调参后泛化性能往往更好。</p>'
+  },
+  q5: {
+    correct: '错误',
+    content: '<p><strong>答案：错误</strong></p><p>每个头有<strong>独立的</strong> W_q, W_k, W_v 投影矩阵，所以每个头在<strong>不同的投影子空间</strong>中计算注意力，并非"复制"。结果也不是"取平均"，而是<strong>拼接后通过 W_o 投影</strong>，实现跨头信息交互。</p>'
+  },
+  q6: {
+    content: '<p><strong>(1)</strong> 缺少 <code>optimizer.zero_grad()</code>。梯度会不断累加，每个 batch 的梯度都是之前所有 batch 梯度之和 → 相当于 batch_size 越来越大 → 可能导致梯度爆炸或训练不稳定。</p><p><strong>(2)</strong> <strong>Dropout</strong>：train 时随机失活神经元，eval 时关闭（全部保留）。<strong>BatchNorm</strong>：train 时用当前 mini-batch 的均值和方差（同时更新全局 running mean/var），eval 时用训练期间累积的全局统计量。</p><p><strong>(3)</strong> 不是必须的（代码不会报错），但不写会浪费显存。<code>no_grad</code> 下 PyTorch 不构建计算图 → 不需要存储中间变量用于反向传播 → 省显存。验证时不需要梯度，建议始终加上。</p>'
+  },
+  q7: {
+    content: '<p><strong>(1) 模型 A：LSTM 语言模型。</strong> Embedding(5000 词汇 → 100 维) → 2 层 LSTM → 输出 5000 类的概率分布。输入是 token 序列，输出是下一个 token 的概率 → <strong>文本生成 / 语言建模</strong>。</p><p><strong>(2) 模型 B：CNN 图像分类。</strong> Conv + BN → 特征提取，Flatten → FC → 输出 10 类 → <strong>10 分类任务</strong>（如 CIFAR-10）。输入图像经过若干次 Pool 后空间尺寸为 8×8。</p><p><strong>(3) 模型 C：Transformer Encoder Block。</strong> MHA + LayerNorm → FFN + LayerNorm，标准 Transformer 组件。用于<strong>序列建模 / 文本理解</strong>。</p>'
+  },
+  q8: {
+    content: '<p><strong>(1)</strong> LSTM 语言模型（唐诗生成）。输入字符序列 → 预测下一个字符。</p><p><strong>(2)</strong> LSTM 层间 Dropout(0.3)、MLP 中两层 Dropout(0.3)，共 <strong>3 处</strong>正则化。</p><p><strong>(3)</strong> <code>num_layers=2</code>，每层 LSTM 都需要最初的 h0 和 c0。形状 (2, B, 128) = (层数, batch, hidden_dim)。</p><p><strong>(4)</strong> 测试/生成时只取最后一个时间步的输出来预测下一个字符（前面时间步的输出在生成时不需要）。</p><p><strong>(5)</strong> <code>LogSoftmax + NLLLoss = CrossEntropyLoss</code>。在 log 空间计算数值更稳定（避免 Softmax 的指数溢出问题）。配合 <code>NLLLoss</code> 使用。</p>'
+  },
+  q9: {
+    content: '<p><strong>(1)</strong> c = [[58, 64], [139, 154]]，c.shape = (2, 2)。计算过程：c[0][0] = 1×7 + 2×9 + 3×11 = 58；c[0][1] = 1×8 + 2×10 + 3×12 = 64；c[1][0] = 4×7 + 5×9 + 6×11 = 139；c[1][1] = 4×8 + 5×10 + 6×12 = 154。</p><p><strong>(2)</strong> <code>reshape(3, 2)</code> 按行重新排列元素：[[1,2],[3,4],[5,6]]。<code>a.T</code> 是矩阵转置：[[1,4],[2,5],[3,6]]。两者形状都是 (3,2) 但元素排列不同。</p><p><strong>(3)</strong> <code>axis=0</code>：沿列方向求和（每列求和），结果为 [5, 7, 9]，shape=(3,)。<code>axis=1</code>：沿行方向求和（每行求和），结果为 [6, 15]，shape=(2,)。</p>'
+  },
+  q10: {
+    content: '<p><strong>(1)</strong> 防止 e^x 指数溢出（上溢）。当 x 很大时 e^x 会溢出为 inf，减去 max 后最大值变为 0，e^0=1，不会溢出。这是数值稳定性技巧，不影响 Softmax 的最终结果。</p><p><strong>(2)</strong> 保持维度不变，使得结果可以进行<strong>广播</strong>（broadcasting）。例如对二维数组操作时，keepdims=True 让 sum 的结果保持 (N, 1) 而不是 (N,)，从而可以直接做除法。</p><p><strong>(3)</strong> 1.0。Softmax 的定义就是将所有值归一化为概率分布，总和恒为 1。</p>'
+  },
+  q11: {
+    content: '<p><strong>(1)</strong> y.shape = (2, 150528)。<code>-1</code> 表示自动推断该维度大小：总元素数 2×3×224×224 = 301056，已知第一维为 2，所以 -1 = 301056 / 2 = 150528。</p><p><strong>(2)</strong> <code>view</code> 要求 tensor 在内存中是<strong>连续</strong>的（contiguous），它只改变"怎么看"数据（形状）。<code>permute</code> 改变维度的排列顺序（会改变 stride，可能使内存不连续），之后再 <code>view</code> 需要先调 <code>.contiguous()</code>。</p><p><strong>(3)</strong> z.shape = (2, 224, 224, 3)。permute(0, 2, 3, 1) 把维度顺序从 (B, C, H, W) 变为 (B, H, W, C)。</p>'
+  },
+  q12: {
+    content: '<p><strong>(1)</strong> <strong>双重 Softmax</strong> 问题。模型 forward 中已经做了 <code>F.softmax</code>，而 <code>nn.CrossEntropyLoss</code> 内部又包含 LogSoftmax → 等价于对已经 Softmax 过的值再做一次 Softmax + NLLLoss。结果：概率趋于均匀分布，loss 卡在 ≈ -log(1/10) = 2.3026 不下降，模型学不动。</p><p><strong>(2)</strong> 去掉 forward 中的 <code>F.softmax</code> 那一行，让模型直接输出 logits（原始分数）。<code>CrossEntropyLoss</code> 内部会自动处理 Softmax。</p>'
+  },
+  q13: {
+    content: '<p><strong>(1)</strong> Layer 1: 784 × 256 + 256 = 200,704 + 256 = <strong>200,960</strong>；Layer 2: 256 × 128 + 128 = 32,768 + 128 = <strong>32,896</strong>；Layer 3: 128 × 10 + 10 = 1,280 + 10 = <strong>1,290</strong></p><p><strong>(2)</strong> 总计 = 200,960 + 32,896 + 1,290 = <strong>235,146</strong></p><p><strong>(3)</strong> 通用公式：<strong>Params = D_in × D_out + D_out</strong>（权重矩阵 + 偏置向量）</p>'
+  },
+  q14: {
+    content: '<p><strong>(1)</strong> 输出尺寸公式：H_out = ⌊(H_in - K + 2P) / S⌋ + 1。代入：(32 - 3 + 2×1) / 1 + 1 = 32，输出尺寸 = <strong>(64, 32, 32)</strong></p><p><strong>(2)</strong> 参数量 = C_in × C_out × K² + C_out = 3 × 64 × 9 + 64 = 1728 + 64 = <strong>1792</strong></p>'
+  },
+  q15: {
+    content: '<p><strong>(1)</strong> 4 个门 × 2 个矩阵（W 和 U）= 8 个参数矩阵（无 bias）：遗忘门：W_f, U_f；输入门：W_i, U_i；候选记忆：W_c, U_c；输出门：W_o, U_o</p><p><strong>(2)</strong> 每个门：W(128×256) + U(256×256) = 32,768 + 65,536 = 98,304。4 个门总计：4 × 98,304 = <strong>393,216</strong></p>'
+  },
+  q16: {
+    content: '<p><strong>(1)</strong> 224 → <strong>112</strong> → <strong>56</strong> → <strong>28</strong>。每次 MaxPool(2,2) 尺寸减半。</p><p><strong>(2)</strong> (28 - 3 + 0) / 1 + 1 = 25 + 1 = <strong>26×26</strong></p>'
+  },
+  q17: {
+    content: '<p><strong>(1)</strong> d_k = d_model / n_heads = 256 / 8 = <strong>32</strong></p><p><strong>(2)</strong> attention scores shape = <strong>(32, 8, 50, 50)</strong>。含义：(batch_size=32, num_heads=8, query_positions=50, key_positions=50)。</p><p><strong>(3)</strong> 输出 shape = <strong>(32, 50, 256)</strong>（与输入维度相同，多头拼接后经 W_o 投影回 d_model）</p>'
+  },
+  q18: {
+    content: '<p><strong>(1)</strong> 残差指 F(x) = H(x) - x，即网络学习的是"输出减去输入"的差值部分。跳跃连接把恒等映射 x 直接传过去，网络只需学增量部分，比直接学 H(x) 更容易。</p><p><strong>(2)</strong> 反向传播时：∂H/∂x = ∂F/∂x + <strong>1</strong>。这个 "+1" 保证了即使 ∂F/∂x 非常小（趋近于 0），梯度也至少为 1，不会消失。残差连接提供了梯度直达浅层的"高速公路"。</p><p><strong>(3)</strong> 去掉跳跃连接后，ResNet 退化成<strong>普通 CNN</strong>（类似 VGG 的堆叠卷积）。VGG 中梯度必须逐层经过卷积 + BN + ReLU 回传，连乘导致更深的层梯度消失无法训练。ResNet 的跳跃连接让梯度可以无损直通浅层，因此可以堆叠到 152 层甚至更多。</p>'
+  },
+  q19: {
+    content: '<p><strong>(1)</strong> 遗忘门、输入门、输出门，三个门都用 <strong>Sigmoid</strong>（输出 0~1），因为"门"的概念需要 0~1 的值来控制信息的通断（0=全关，1=全开）。候选记忆 c̃_t 用 <strong>Tanh</strong>（输出 -1~1），因为它需要包含正负信息。</p><p><strong>(2)</strong> c_t = <strong>长期记忆</strong>（线性更新 f_t⊙c_{t-1} + i_t⊙c̃_t，梯度无损跨时间步传播 → 解决消失问题）。h_t = <strong>短期输出</strong>（c_t 经 tanh 后由输出门过滤后的"对外发言"）。</p><p><strong>(3)</strong> LSTM 的细胞状态更新主要为<strong>线性运算</strong>。反向传播时梯度几乎无损跨时间步传播。而 SRN 每次需要经过 tanh\' 和矩阵乘法，连乘导致梯度衰减。</p>'
+  },
+  q20: {
+    content: '<p><strong>(1)</strong> 模型发生了<strong>严重过拟合</strong>。训练集上几乎完美（loss ≈ 0），但验证集上表现很差 → 模型记住了训练样本的噪声和细节，而非学到通用特征。</p><p><strong>(2)</strong> 解决方法：① <strong>数据增强</strong>：通过翻转、裁剪、颜色抖动等变换增加训练数据多样性；② <strong>Dropout</strong>：训练时随机丢弃神经元；③ <strong>L2 正则化</strong>：限制权重大小；④ <strong>早停</strong>：监控 val_loss，当验证集 loss 不再下降时提前停止训练。</p>'
+  }
+};
+
+// 提交试卷
+function submitExam() {
+  clearInterval(timerInterval);
+  
+  let totalScore = 0;
+  let maxScore = 100;
+  let correctCount = 0;
+  const questionResults = {};
+  
+  // 评分
+  Object.keys(answers).forEach(key => {
+    let userAnswer = '';
+    let isCorrect = false;
+    
+    // 选择题
+    if (key.startsWith('q') && key.length <= 3 && !key.includes('_')) {
+      if (key === 'q5') {
+        userAnswer = localStorage.getItem('q5') || '';
+      } else {
+        const el = document.querySelector(`input[name="${key}"]:checked`);
+        userAnswer = el ? el.value : '';
+      }
+    } else {
+      // 填空题
+      const el = document.getElementById(key);
+      userAnswer = el ? el.value.trim().toLowerCase() : '';
+    }
+    
+    const answer = answers[key];
+    
+    if (answer instanceof RegExp) {
+      isCorrect = answer.test(userAnswer);
+    } else {
+      isCorrect = userAnswer === answer;
+    }
+    
+    if (isCorrect) {
+      totalScore += scores[key];
+      correctCount++;
+    }
+    
+    // 记录大题的结果（用于显示解析）
+    const mainKey = key.split('_')[0];
+    if (!questionResults[mainKey]) {
+      questionResults[mainKey] = isCorrect;
+    } else if (!isCorrect) {
+      questionResults[mainKey] = false; // 只要有一个子题错，大题就算错
+    }
+  });
+  
+  // 显示解析
+  showAnalysis(questionResults);
+  
+  // 显示结果
+  const modal = document.getElementById('resultModal');
+  const scoreCircle = document.getElementById('scoreCircle');
+  const finalScore = document.getElementById('finalScore');
+  const accuracy = document.getElementById('accuracy');
+  const timeUsed = document.getElementById('timeUsed');
+  
+  finalScore.textContent = `${totalScore}/${maxScore}`;
+  accuracy.textContent = `${Math.round((totalScore / maxScore) * 100)}%`;
+  
+  const usedMinutes = Math.floor((120 * 60 - timeLeft) / 60);
+  timeUsed.textContent = `${usedMinutes}分钟`;
+  
+  // 设置分数圈颜色
+  const percent = totalScore / maxScore;
+  if (percent >= 0.9) scoreCircle.className = 'score-circle excellent';
+  else if (percent >= 0.75) scoreCircle.className = 'score-circle good';
+  else if (percent >= 0.6) scoreCircle.className = 'score-circle pass';
+  else scoreCircle.className = 'score-circle fail';
+  
+  scoreCircle.textContent = totalScore;
+  
+  modal.classList.add('show');
+}
+
+// 显示解析
+function showAnalysis(results) {
+  // 为每个题目添加解析区域
+  const questionIds = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'q10', 'q11', 'q12', 'q13', 'q14', 'q15', 'q16', 'q17', 'q18', 'q19', 'q20'];
+  const questions = document.querySelectorAll('.question');
+  
+  questionIds.forEach(qId => {
+    const qNum = parseInt(qId.replace('q', ''));
+    let questionEl = null;
+    
+    // 查找对应题号的题目
+    questions.forEach(el => {
+      const qHead = el.querySelector('.q-head');
+      if (qHead && qHead.textContent.includes(`第 ${qNum} 题`)) {
+        questionEl = el;
+      }
+    });
+    
+    if (!questionEl) return;
+    
+    // 如果已经有解析区域，先移除
+    const existingAnalysis = questionEl.querySelector('.analysis-area');
+    if (existingAnalysis) {
+      existingAnalysis.remove();
+    }
+    
+    const isCorrect = results[qId] || false;
+    const analysisData = analysis[qId];
+    
+    if (analysisData) {
+      const analysisHtml = `
+        <div class="analysis-area show">
+          <div class="analysis-header">
+            <span class="analysis-title">📝 参考答案与解析</span>
+            <span class="analysis-status ${isCorrect ? 'correct' : 'wrong'}">${isCorrect ? '✓ 回答正确' : '✗ 回答错误'}</span>
+          </div>
+          <div class="analysis-content">${analysisData.content}</div>
+        </div>
+      `;
+      
+      questionEl.insertAdjacentHTML('beforeend', analysisHtml);
+    }
+  });
+}
+
+// 关闭弹窗
+function closeModal() {
+  document.getElementById('resultModal').classList.remove('show');
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+  timerInterval = setInterval(updateTimer, 1000);
+  
+  // 判断题按钮添加数据属性
+  document.querySelectorAll('.tf-btn').forEach((btn, i) => {
+    btn.setAttribute('data-q', 'q5');
+  });
+});
+</script>
+</body>
+</html>

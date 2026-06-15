@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RDK X5 端侧 AI 遥操作与动作预测系统</title>
+  <style>
+    :root{
+      --bg:#020617;
+      --bg2:#0b1220;
+      --card: rgba(15, 23, 42, 0.60);
+      --card2: rgba(30, 41, 59, 0.42);
+      --border: rgba(148, 163, 184, 0.18);
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --soft:#cbd5e1;
+      --title:#f8fafc;
+      --primary:#6366f1;
+      --primary2:#8b5cf6;
+      --accent:#06b6d4;
+      --accent2:#22d3ee;
+      --success:#34d399;
+      --warning:#fbbf24;
+      --danger:#fb7185;
+      --shadow: 0 30px 80px rgba(2, 6, 23, .45);
+      --radius: 28px;
+      --radius-lg: 36px;
+      --max: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                   "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC",
+                   system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(99,102,241,.16), transparent 28%),
+        radial-gradient(circle at 80% 0%, rgba(6,182,212,.12), transparent 24%),
+        radial-gradient(circle at 50% 100%, rgba(139,92,246,.12), transparent 30%),
+        linear-gradient(180deg, #020617 0%, #070b16 35%, #020617 100%);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* 背景网格 */
+    body::before {
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(148,163,184,.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148,163,184,.055) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(circle at center, black 25%, transparent 85%);
+      opacity: .8;
+      z-index: 0;
+    }
+
+    /* 粒子层 */
+    canvas#particles {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: .7;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(18px);
+      background: rgba(2, 6, 23, 0.62);
+      border-bottom: 1px solid rgba(148,163,184,.14);
+    }
+
+    .topbar-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(6,182,212,.95), rgba(99,102,241,.95));
+      box-shadow: 0 10px 30px rgba(99,102,241,.28);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .brand-text {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+
+    .brand-text strong {
+      color: var(--title);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .brand-text span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .nav a {
+      color: var(--soft);
+      text-decoration: none;
+      font-size: 12px;
+      padding: 8px 12px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: rgba(15,23,42,.28);
+      transition: .25s ease;
+      white-space: nowrap;
+    }
+
+    .nav a:hover {
+      border-color: rgba(6,182,212,.35);
+      background: rgba(6,182,212,.10);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .section {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 96px 20px;
+    }
+
+    .hero {
+      padding-top: 74px;
+      min-height: calc(100vh - 72px);
+      display: grid;
+      align-items: center;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.25fr .95fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid rgba(148,163,184,.18);
+      border-radius: 999px;
+      background: rgba(15,23,42,.35);
+      color: #dbeafe;
+      font-size: 13px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(42px, 5vw, 76px);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      color: var(--title);
+      text-shadow: 0 10px 35px rgba(2,6,23,.55);
+      max-width: 12ch;
+    }
+
+    .subtitle {
+      margin: 22px 0 0;
+      max-width: 760px;
+      color: var(--soft);
+      font-size: clamp(16px, 1.6vw, 20px);
+      line-height: 1.8;
+    }
+
+    .accent {
+      background: linear-gradient(90deg, #fff, #bdf7ff 35%, #c7d2fe 70%, #fff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight: 800;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-radius: 18px;
+      border: 1px solid rgba(148,163,184,.18);
+      text-decoration: none;
+      color: white;
+      background: rgba(15,23,42,.46);
+      backdrop-filter: blur(18px);
+      transition: .25s ease;
+      box-shadow: var(--shadow);
+      font-weight: 700;
+    }
+
+    .btn.primary {
+      border-color: rgba(6,182,212,.35);
+      background: linear-gradient(135deg, rgba(6,182,212,.20), rgba(99,102,241,.18));
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,.16);
+    }
+
+    .hero-note {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(15,23,42,.42);
+      border: 1px solid rgba(148,163,184,.14);
+    }
+
+    .glass {
+      background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(15,23,42,.45));
+      border: 1px solid rgba(148,163,184,.16);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero-card {
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::before {
+      content:"";
+      position:absolute;
+      inset:-40% -15% auto auto;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,.20), transparent 70%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(2,6,23,.36);
+      border: 1px solid rgba(148,163,184,.12);
+    }
+
+    .stat .num {
+      display: block;
+      font-size: 30px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -.03em;
+      margin-bottom: 8px;
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .floating {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .mini-bar {
+      display: grid;
+      grid-template-columns: 126px 1fr 44px;
+      gap: 12px;
+      align-items: center;
+      color: var(--soft);
+      font-size: 13px;
+    }
+
+    .bar {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(148,163,184,.10);
+      overflow: hidden;
+      border: 1px solid rgba(148,163,184,.12);
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(6,182,212,.92), rgba(99,102,241,.92));
+      box-shadow: 0 0 18px rgba(6,182,212,.35);
+    }
+
+    .section-head {
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-kicker {
+      color: #a5f3fc;
+      font-size: 13px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: clamp(28px, 3vw, 46px);
+      line-height: 1.1;
+      color: var(--title);
+      letter-spacing: -.04em;
+    }
+
+    .section-desc {
+      margin: 0;
+      max-width: 900px;
+      color: var(--soft);
+      line-height: 1.8;
+      font-size: 16px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      padding: 22px;
+      border-radius: 26px;
+      background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(15,23,42,.42));
+      border: 1px solid rgba(148,163,184,.16);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+      transition: transform .28s ease, border-color .28s ease, background .28s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(6,182,212,.28);
+      background: linear-gradient(180deg, rgba(15,23,42,.76), rgba(15,23,42,.50));
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 20px;
+      color: #fff;
+      letter-spacing: -.03em;
+    }
+
+    .card p, .card li {
+      color: var(--soft);
+      line-height: 1.75;
+      font-size: 15px;
+    }
+
+    .list {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .list li + li { margin-top: 8px; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: 999px;
+      background: rgba(6,182,212,.10);
+      border: 1px solid rgba(6,182,212,.22);
+      color: #cffafe;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .metric strong {
+      font-size: 34px;
+      line-height: 1;
+      color: #fff;
+      letter-spacing: -.04em;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .flow-wrap {
+      padding: 20px;
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .flow-step {
+      padding: 16px 14px;
+      min-height: 126px;
+      border-radius: 22px;
+      background: rgba(2,6,23,.38);
+      border: 1px solid rgba(148,163,184,.14);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      position: relative;
+    }
+
+    .flow-step .icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(6,182,212,.18), rgba(99,102,241,.18));
+      border: 1px solid rgba(148,163,184,.14);
+      font-size: 18px;
+    }
+
+    .flow-step strong {
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .flow-step span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .arrow {
+      font-size: 30px;
+      color: rgba(191,219,254,.55);
+      text-align: center;
+      user-select: none;
+    }
+
+    .layer {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .layer-diagram {
+      padding: 22px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(15,23,42,.45));
+      border: 1px solid rgba(148,163,184,.16);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .stack-row {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .stack-label {
+      border-radius: 18px;
+      padding: 16px 14px;
+      background: rgba(2,6,23,.44);
+      border: 1px solid rgba(148,163,184,.14);
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .stack-box {
+      border-radius: 18px;
+      padding: 16px 16px;
+      background: rgba(30,41,59,.44);
+      border: 1px solid rgba(148,163,184,.14);
+      color: var(--soft);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .stack-box b {
+      color: #fff;
+    }
+
+    .protocol {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .proto-pill {
+      padding: 14px 14px;
+      border-radius: 18px;
+      background: rgba(2,6,23,.36);
+      border: 1px solid rgba(148,163,184,.14);
+      color: var(--soft);
+      font-size: 13px;
+      line-height: 1.55;
+      text-align: center;
+    }
+
+    .proto-pill b {
+      color: #fff;
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .table-card {
+      overflow: hidden;
+      padding: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 15px;
+    }
+
+    thead th {
+      text-align: left;
+      background: rgba(15,23,42,.82);
+      color: #fff;
+      padding: 18px 18px;
+      border-bottom: 1px solid rgba(148,163,184,.16);
+      font-size: 14px;
+    }
+
+    tbody td {
+      padding: 18px;
+      border-bottom: 1px solid rgba(148,163,184,.10);
+      color: var(--soft);
+      vertical-align: middle;
+    }
+
+    tbody tr:hover td {
+      background: rgba(6,182,212,.05);
+    }
+
+    .remaining {
+      margin-top: 18px;
+      padding: 18px 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(6,182,212,.12), rgba(99,102,241,.12));
+      border: 1px solid rgba(6,182,212,.20);
+      color: #e0f7ff;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    .innovation-card {
+      min-height: 190px;
+    }
+
+    .innovation-card .bigicon {
+      font-size: 28px;
+      margin-bottom: 12px;
+      color: #cffafe;
+    }
+
+    .innovation-card h3 {
+      margin-bottom: 10px;
+    }
+
+    .scene {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 220px;
+    }
+
+    .scene-icon {
+      font-size: 30px;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .scene strong {
+      font-size: 18px;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+    }
+
+    .compare-summary {
+      display: grid;
+      gap: 12px;
+    }
+
+    .compare-item {
+      padding: 16px 18px;
+      border-radius: 20px;
+      background: rgba(2,6,23,.36);
+      border: 1px solid rgba(148,163,184,.14);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .compare-item span {
+      color: var(--soft);
+      font-size: 14px;
+    }
+
+    .compare-item b {
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 14px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: linear-gradient(180deg, rgba(6,182,212,.65), rgba(99,102,241,.65));
+    }
+
+    .phase {
+      position: relative;
+      margin-left: 16px;
+      padding: 18px 18px 18px 20px;
+      border-radius: 20px;
+      background: rgba(2,6,23,.36);
+      border: 1px solid rgba(148,163,184,.14);
+    }
+
+    .phase::before {
+      content: "";
+      position: absolute;
+      left: -25px;
+      top: 22px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #06b6d4, #6366f1);
+      box-shadow: 0 0 0 5px rgba(6,182,212,.12);
+    }
+
+    .phase h4 {
+      margin: 0 0 6px;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .phase p {
+      margin: 0;
+      color: var(--soft);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .highlight-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .highlight {
+      padding: 20px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(15,23,42,.72), rgba(15,23,42,.44));
+      border: 1px solid rgba(148,163,184,.16);
+    }
+
+    .highlight .score {
+      font-size: 28px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 10px;
+      letter-spacing: -.03em;
+    }
+
+    .highlight p {
+      margin: 0;
+      color: var(--soft);
+      line-height: 1.75;
+      font-size: 14px;
+    }
+
+    .footer {
+      padding-bottom: 110px;
+    }
+
+    .closing {
+      padding: 34px;
+      text-align: center;
+    }
+
+    .closing h2 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 56px);
+      color: var(--title);
+      letter-spacing: -.04em;
+    }
+
+    .closing p {
+      margin: 18px auto 0;
+      max-width: 720px;
+      color: var(--soft);
+      line-height: 1.8;
+      font-size: 16px;
+    }
+
+    .closing .slogan {
+      margin-top: 20px;
+      display: inline-flex;
+      padding: 12px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(6,182,212,.22);
+      background: rgba(6,182,212,.10);
+      color: #cffafe;
+      font-weight: 800;
+    }
+
+    .contact {
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity .8s ease, transform .8s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .small-muted {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(2,6,23,.34);
+      border: 1px solid rgba(148,163,184,.14);
+      color: var(--soft);
+      font-size: 12px;
+    }
+
+    .svg-box {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .caption {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 1080px) {
+      .hero-grid,
+      .layer,
+      .compare-grid {
+        grid-template-columns: 1fr;
+      }
+      .grid-4,
+      .highlight-grid,
+      .grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .flow-steps {
+        grid-template-columns: 1fr;
+      }
+      .arrow { transform: rotate(90deg); }
+      .stack-row {
+        grid-template-columns: 1fr;
+      }
+      .protocol {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .section { padding: 76px 16px; }
+      .topbar-inner { padding: 12px 14px; flex-direction: column; align-items: flex-start; }
+      .nav { width: 100%; justify-content: flex-start; }
+      .grid-2,
+      .grid-3,
+      .grid-4,
+      .highlight-grid {
+        grid-template-columns: 1fr;
+      }
+      .stats-grid { grid-template-columns: 1fr; }
+      .title { max-width: none; }
+      .hero { min-height: auto; padding-top: 40px; }
+      .card, .hero-card, .layer-diagram, .closing { border-radius: 22px; }
+      .table-card { overflow-x: auto; }
+      table { min-width: 760px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <div class="wrap">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark">X5</div>
+          <div class="brand-text">
+            <strong>RDK X5 端侧 AI 遥操作与动作预测系统</strong>
+            <span>Skill + Protocol 双解耦架构</span>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#background">背景痛点</a>
+          <a href="#pipeline">核心流水线</a>
+          <a href="#architecture">架构设计</a>
+          <a href="#compute">算力分配</a>
+          <a href="#innovation">创新点</a>
+          <a href="#scenes">应用场景</a>
+          <a href="#compare">竞品对比</a>
+          <a href="#timeline">实施路径</a>
+          <a href="#ending">结尾</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- 1. 封面 -->
+    <section class="section hero">
+      <div class="hero-grid">
+        <div class="reveal">
+          <div class="eyebrow">端侧实时 · 低成本替代 · 可扩展机器人控制</div>
+          <h1 class="title">RDK X5 端侧 AI 遥操作与动作预测系统</h1>
+          <p class="subtitle">
+            基于 <span class="accent">Skill + Protocol 双解耦架构</span>，将普通 USB 摄像头、
+            端侧推理与标准化协议结合起来，实现从人体动作捕捉、趋势预测到设备控制的完整闭环。
+            我们的目标不是冲击精度天花板，而是以 <span class="accent">更低成本、更低延迟、更高可扩展性</span>
+            让更多创作者用得起、部署得起、改得动。
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn primary" href="#background">开始查看方案 →</a>
+            <a class="btn" href="#architecture">看架构图</a>
+          </div>
+
+          <div class="hero-note">
+            <span class="pill">深蓝 × 紫色 × 青色科技风</span>
+            <span class="pill">毛玻璃卡片</span>
+            <span class="pill">滚动淡入动画</span>
+            <span class="pill">纯前端单文件</span>
+          </div>
+        </div>
+
+        <div class="glass hero-card reveal">
+          <div class="tag">项目口号</div>
+          <div class="metric">
+            <strong>不拼精度天花板，拼性能/价格比</strong>
+            <span>将“万元级专业动捕 / 遥操作方案”压缩为“千元级端侧 AI 方案”，强调可用性、可迁移性与开发者友好。</span>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat">
+              <span class="num">10 TOPS</span>
+              <div class="label">RDK X5 官方端侧 AI 算力定位</div>
+            </div>
+            <div class="stat">
+              <span class="num">&lt; ¥1000</span>
+              <div class="label">普通 USB 摄像头 + 端侧板卡 + 轻量协议链路</div>
+            </div>
+            <div class="stat">
+              <span class="num">&lt; 15ms</span>
+              <div class="label">预测链路目标延迟，面向实时交互</div>
+            </div>
+            <div class="stat">
+              <span class="num">4+</span>
+              <div class="label">可扩展场景：主播、机械臂、远程桌面、小车</div>
+            </div>
+          </div>
+
+          <div class="floating">
+            <div class="mini-bar">
+              <span>感知与检测</span>
+              <div class="bar"><span style="width: 30%"></span></div>
+              <span>3 TOPS</span>
+            </div>
+            <div class="mini-bar">
+              <span>动作预测</span>
+              <div class="bar"><span style="width: 40%"></span></div>
+              <span>4 TOPS</span>
+            </div>
+            <div class="mini-bar">
+              <span>剩余裕量</span>
+              <div class="bar"><span style="width: 30%"></span></div>
+              <span>3 TOPS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 项目背景与痛点 -->
+    <section id="background" class="section">
+      <div class="section-head reveal">
+        <div class="section-kicker">01 · 项目背景与痛点</div>
+        <h2 class="section-title">为什么需要一套“端侧 AI 遥操作与动作预测系统”</h2>
+        <p class="section-desc">
+          真实场景中，动作采集、遥操作和机器人控制经常被三类问题卡住：一是成本高，二是实时性差，三是扩展性弱。
+          我们希望用更低成本的硬件和更灵活的软件架构，把这三件事同时解决。
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card reveal">
+          <div class="tag">传统方案的门槛</div>
+          <ul class="list">
+            <li>专业动捕方案（如 XSens、OptiTrack）价格通常远高于个人创作者承受范围，整体成本往往超过 <b>¥10000</b>。</li>
+            <li>纯 Webcam 视觉方案（如 MediaPipe 直出）虽然便宜，但常见问题是 <b>抖动大、丢帧、无预测</b>。</li>
+            <li>遥控机器人如果完全依赖专业摇杆或复杂控制面板，学习成本高，不适合轻量化创作。</li>
+          </ul>
+        </div>
+
+        <div class="card reveal">
+          <div class="tag">我们的解决思路</div>
+          <ul class="list">
+            <li>采用 <b>RDK X5</b> 作为端侧推理核心，利用其 10 TOPS 级别算力承载视觉与预测任务。</li>
+            <li>使用 <b>普通 USB 摄像头</b> 降低硬件门槛，避免昂贵传感器带来的成本压力。</li>
+            <li>通过 <b>MOSS 模型</b> 进行动作趋势预测、补帧和平滑，改善抖动与延迟问题。</li>
+            <li>把总体成本控制在 <b>¥1000 以内</b>，面向创作者、实验室和教学展示都更友好。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 核心流水线 -->
+    <section id="pipeline" class="section">
+      <div class="section-head reveal">
+        <div class="section-kicker">02 · 核心流水线</div>
+        <h2 class="section-title">从摄像头到设备控制的完整链路</h2>
+        <p class="section-desc">
+          这一层可以直接做成答辩时的“总览图”。核心思想是：普通摄像头采集，RDK X5 在端侧完成推理与预测，
+          OpenClaw Agent 负责编排 Skill，再通过统一协议分发到不同设备适配器。
+        </p>
+      </div>
+
+      <div class="card flow-wrap reveal">
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="icon">📷</div>
+            <strong>捕捉</strong>
+            <span>普通 USB 摄像头采集动作帧</span>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="flow-step">
+            <div class="icon">🧠</div>
+            <strong>MOSS 模型</strong>
+            <span>RDK X5 BPU 推理，完成运动预测 / 补帧 / 平滑</span>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="flow-step">
+            <div class="icon">🤖</div>
+            <strong>OpenClaw Agent</strong>
+            <span>编排 Skill，进行自然语言与任务调度</span>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="flow-step">
+            <div class="icon">📦</div>
+            <strong>Skill</strong>
+            <span>将预测结果打包为标准化输出</span>
+          </div>
+        </div>
+
+        <div style="margin: 16px 0 10px; text-align:center; color: var(--muted);">➜</div>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="icon">🧾</div>
+            <strong>MotionControl Protocol</strong>
+            <span>JSON / Protobuf 标准化协议</span>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="flow-step">
+            <div class="icon">🧩</div>
+            <strong>适配器层</strong>
+            <span>协议转成不同硬件专有指令</span>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="flow-step">
+            <div class="icon">🎥</div>
+            <strong>虚拟主播</strong>
+            <span>VMC / VRM 等数字人应用</span>
+          </div>
+          <div class="arrow">➜</div>
+          <div class="flow-step">
+            <div class="icon">🦾</div>
+            <strong>机械臂 / 云台 / 小车</strong>
+            <span>远程桌面、底盘控制、手势交互</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 架构设计 -->
+    <section id="architecture" class="section">
+      <div class="section-head reveal">
+        <div class="section-kicker">03 · 架构设计</div>
+        <h2 class="section-title">Skill + Protocol 双解耦架构</h2>
+        <p class="section-desc">
+          这里是整份展示里最关键的一页。思路非常简单：Skill 不做重活，只负责把模型结果转成标准协议；
+          协议统一一切，设备差异交给 Adapter 消化。这样系统天然适配本地、远程和云端三种工作模式。
+        </p>
+      </div>
+
+      <div class="layer">
+        <div class="layer-diagram reveal">
+          <svg class="svg-box" viewBox="0 0 1200 820" xmlns="http://www.w3.org/2000/svg" aria-label="架构图">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.95"/>
+                <stop offset="100%" stop-color="#6366f1" stop-opacity="0.95"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#0f172a" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#1e293b" stop-opacity="0.9"/>
+              </linearGradient>
+              <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#020617" flood-opacity=".55"/>
+              </filter>
+            </defs>
+
+            <rect x="20" y="20" width="1160" height="780" rx="28" fill="rgba(2,6,23,0.12)" stroke="rgba(148,163,184,0.16)"/>
+
+            <!-- 顶部感知层 -->
+            <rect x="70" y="70" width="1060" height="95" rx="22" fill="url(#g2)" stroke="rgba(148,163,184,0.18)" filter="url(#shadow)"/>
+            <text x="105" y="112" fill="#f8fafc" font-size="30" font-weight="800">感知层</text>
+            <text x="280" y="112" fill="#cbd5e1" font-size="22">USB 摄像头 / 双目相机</text>
+            <text x="650" y="112" fill="#cbd5e1" font-size="22">MediaPipe / YOLOv8-pose on BPU</text>
+
+            <!-- 箭头 -->
+            <line x1="600" y1="166" x2="600" y2="216" stroke="url(#g1)" stroke-width="6" stroke-linecap="round"/>
+            <polygon points="600,232 586,210 614,210" fill="#06b6d4"/>
+
+            <!-- 推理层 -->
+            <rect x="70" y="240" width="1060" height="110" rx="22" fill="url(#g2)" stroke="rgba(148,163,184,0.18)" filter="url(#shadow)"/>
+            <text x="105" y="286" fill="#f8fafc" font-size="30" font-weight="800">推理层</text>
+            <text x="280" y="286" fill="#cbd5e1" font-size="22">MOSS 模型</text>
+            <text x="480" y="286" fill="#cbd5e1" font-size="22">BPU 量化</text>
+            <text x="660" y="286" fill="#cbd5e1" font-size="22">运动趋势预测 / 补帧 / 平滑</text>
+            <text x="280" y="322" fill="#94a3b8" font-size="18">让动作不只是“看见”，而是“预判”</text>
+
+            <!-- 箭头 -->
+            <line x1="600" y1="352" x2="600" y2="402" stroke="url(#g1)" stroke-width="6" stroke-linecap="round"/>
+            <polygon points="600,418 586,396 614,396" fill="#06b6d4"/>
+
+            <!-- Agent 层 -->
+            <rect x="70" y="426" width="1060" height="95" rx="22" fill="url(#g2)" stroke="rgba(148,163,184,0.18)" filter="url(#shadow)"/>
+            <text x="105" y="468" fill="#f8fafc" font-size="30" font-weight="800">Agent 层</text>
+            <text x="280" y="468" fill="#cbd5e1" font-size="22">OpenClaw</text>
+            <text x="460" y="468" fill="#cbd5e1" font-size="22">编排 Skill</text>
+            <text x="650" y="468" fill="#cbd5e1" font-size="22">自然语言交互</text>
+
+            <!-- 箭头 -->
+            <line x1="600" y1="522" x2="600" y2="572" stroke="url(#g1)" stroke-width="6" stroke-linecap="round"/>
+            <polygon points="600,588 586,566 614,566" fill="#06b6d4"/>
+
+            <!-- Skill + Protocol -->
+            <rect x="70" y="606" width="510" height="130" rx="22" fill="url(#g2)" stroke="rgba(148,163,184,0.18)" filter="url(#shadow)"/>
+            <rect x="620" y="606" width="510" height="130" rx="22" fill="url(#g2)" stroke="rgba(148,163,184,0.18)" filter="url(#shadow)"/>
+            <text x="105" y="648" fill="#f8fafc" font-size="28" font-weight="800">Skill 层</text>
+            <text x="105" y="686" fill="#cbd5e1" font-size="20">motion_output.skill</text>
+            <text x="105" y="720" fill="#94a3b8" font-size="17">极轻量，只做模型输出转协议</text>
+
+            <text x="655" y="648" fill="#f8fafc" font-size="28" font-weight="800">协议层</text>
+            <text x="655" y="686" fill="#cbd5e1" font-size="20">MotionControl Protocol</text>
+            <text x="655" y="720" fill="#94a3b8" font-size="17">JSON / Protobuf 统一输出格式</text>
+
+            <!-- 底部提示 -->
+            <text x="600" y="804" fill="#a5f3fc" font-size="18" text-anchor="middle">新增设备，只需编写 Adapter；Skill 保持极简，协议保持统一</text>
+          </svg>
+          <div class="caption">架构示意图：感知 → 推理 → Agent → Skill → 协议 → 适配器 → 终端设备</div>
+        </div>
+
+        <div class="stack reveal">
+          <div class="stack-row">
+            <div class="stack-label">感知层</div>
+            <div class="stack-box">
+              <b>USB 摄像头 / 双目相机</b>，输入动作、手势与姿态数据；可接入 <b>MediaPipe / YOLOv8-pose on BPU</b>。
+            </div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">推理层</div>
+            <div class="stack-box">
+              <b>MOSS 模型</b> 负责动作趋势预测、补帧和平滑；采用 <b>BPU 量化</b> 路线，尽量把实时计算留在端侧。
+            </div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Agent 层</div>
+            <div class="stack-box">
+              <b>OpenClaw</b> 负责编排 Skill、控制任务流，并可接入自然语言交互，实现“说一句话，调一个动作”。
+            </div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">Skill 层</div>
+            <div class="stack-box">
+              <b>motion_output.skill</b> 保持极轻量，只做模型输出到协议的转换，目标是 <b>每个 Skill 少于 50 行</b>。
+            </div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">协议层</div>
+            <div class="stack-box">
+              <b>MotionControl Protocol</b> 统一 JSON / Protobuf；设备无差异接口统一后，后续扩展更稳定。
+            </div>
+          </div>
+          <div class="stack-row">
+            <div class="stack-label">适配器层</div>
+            <div class="stack-box">
+              各设备有自己的 <b>Adapter</b>，负责把协议转成专有指令，新增设备时无需重写前面整个链路。
+            </div>
+          </div>
+
+          <div class="protocol">
+            <div class="proto-pill">
+              <b>核心原则 1</b>
+              Skill 轻到极致
+            </div>
+            <div class="proto-pill">
+              <b>核心原则 2</b>
+              协议统一一切
+            </div>
+            <div class="proto-pill">
+              <b>核心原则 3</b>
+              新设备只写 Adapter
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 端云算力分配 -->
+    <section id="compute" class="section">
+      <div class="section-head reveal">
+        <div class="section-kicker">04 · 端云算力分配</div>
+        <h2 class="section-title">把实时任务留在端侧，把认知任务交给云端</h2>
+        <p class="section-desc">
+          端侧最适合做低延迟、闭环紧的任务；云端更适合做复杂语义理解、场景分析与模型微调。
+          这样既不浪费 RDK X5 的 10 TOPS，又不会让端侧硬扛所有复杂逻辑。
+        </p>
+      </div>
+
+      <div class="card table-card reveal">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 32%;">任务</th>
+              <th style="width: 28%;">运行位置</th>
+              <th>算力消耗</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>人体关键点检测</td>
+              <td>RDK X5 BPU</td>
+              <td>约 3 TOPS</td>
+            </tr>
+            <tr>
+              <td>MOSS 运动预测</td>
+              <td>RDK X5 BPU</td>
+              <td>约 4 TOPS</td>
+            </tr>
+            <tr>
+              <td>语义理解 / 场景分析</td>
+              <td>云端</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>复杂手势映射</td>
+              <td>云端可选</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>数据记录 / 模型微调</td>
+              <td>云端</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="remaining reveal">
+        <b>端侧裕量：</b>10 - 3 - 4 = <b>约 3 TOPS 剩余</b>。<br />
+        这部分裕量可用于系统调度、通信缓冲、轻量滤波、状态融合等辅助工作，让端侧方案更稳更灵活。
+      </div>
+    </section>
+
+    <!-- 6. 核心创新点 -->
+    <section id="innovation" class="section">
+      <div class="section-head reveal">
+        <div class="section-kicker">05 · 核心创新点</div>
+        <h2 class="section-title">四个关键词，概括这套方案的价值</h2>
+        <p class="section-desc">
+          这部分建议答辩时用“卡片式演示”，老师一眼就能看出你们不是在做简单的摄像头驱动，而是在做完整的端侧 AI 交互系统。
+        </p>
+      </div>
+
+      <div class="grid-4">
+        <div class="card innovation-card reveal">
+          <div class="bigicon">🔮</div>
+          <h3>端侧运动预测</h3>
+          <p>不是单纯跟随摄像头结果，而是由 MOSS 模型对动作趋势进行预判，补偿抖动与丢帧，提升交互连续性。</p>
+        </div>
+        <div class="card innovation-card reveal">
+          <div class="bigicon">🧩</div>
+          <h3>Skill + Protocol 极简解耦</h3>
+          <p>Skill 只负责把模型输出打包成标准协议，不把逻辑写死在设备里，新增设备时修改成本极低。</p>
+        </div>
+        <div class="card innovation-card reveal">
+          <div class="bigicon">🌐</div>
+          <h3>端云灵活分配</h3>
+          <p>实时任务留在端侧，理解任务放到云端，形成轻量闭环与复杂认知的合理分工。</p>
+        </div>
+        <div class="card innovation-card reveal">
+          <div class="bigicon">💰</div>
+          <h3>千元级替代万元级</h3>
+          <p>把专业动捕 / 遥操作门槛大幅拉低，让创作者、实验室和教学场景更容易落地。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. 应用场景 -->
+    <section id="scenes" class="section">
+      <div class="section-head reveal">
+        <div class="section-kicker">06 · 应用场景</div>
+        <h2 class="section-title">三类典型场景，覆盖展示、控制与协作</h2>
+        <p class="section-desc">
+          场景页的重点是“把抽象能力讲成具体用途”。每个场景用一句话说明“输入是什么、输出是什么、为什么有价值”。
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card scene reveal">
+          <div class="scene-icon">🎭</div>
+          <strong>低成本虚拟主播</strong>
+          <p>普通 USB 摄像头 + RDK X5，即可驱动 VRM/数字人。通过 VMC 类协议输出姿态，成本可控制在 <b>¥1000 以内</b>。</p>
+          <div class="chip-row">
+            <span class="chip">USB 摄像头</span>
+            <span class="chip">RDK X5</span>
+            <span class="chip">VMC 协议</span>
+            <span class="chip">VRM 驱动</span>
+          </div>
+        </div>
+
+        <div class="card scene reveal">
+          <div class="scene-icon">🕹️</div>
+          <strong>远程手势控制</strong>
+          <p>摄像头识别手势后，可以控制小车、云台或其他执行器，避免繁琐摇杆操作，实现更自然的人机交互。</p>
+          <div class="chip-row">
+            <span class="chip">自然交互</span>
+            <span class="chip">控制小车</span>
+            <span class="chip">控制云台</span>
+            <span class="chip">免摇杆</span>
+          </div>
+        </div>
+
+        <div class="card scene reveal">
+          <div class="scene-icon">📡</div>
+          <strong>远程协作标定</strong>
+          <p>在屏幕前指向某个位置，远端激光笔或指示器同步指向，适合教学演示、远程协作和空间标定。</p>
+          <div class="chip-row">
+            <span class="chip">屏幕指向</span>
+            <span class="chip">远端同步</span>
+            <span class="chip">激光笔</span>
+            <span class="chip">所见即所指</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. 竞品对比 -->
+    <section id="compare" class="section">
+      <div class="section-head reveal">
+        <div class="section-kicker">07 · 竞品对比</div>
+        <h2 class="section-title">把“能不能做”与“值不值得做”同时讲清楚</h2>
+        <p class="section-desc">
+          对比页最重要的不是堆参数，而是把成本、扩展性和预测能力放到一起看，让老师能快速理解方案定位。
+        </p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="card table-card reveal">
+          <table>
+            <thead>
+              <tr>
+                <th>方案</th>
+                <th>精度</th>
+                <th>成本</th>
+                <th>可扩展</th>
+                <th>有预测</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>专业动捕</td>
+                <td>★★★★★</td>
+                <td>&gt; ¥10000</td>
+                <td>★☆☆</td>
+                <td>否</td>
+              </tr>
+              <tr>
+                <td>纯视觉（MediaPipe）</td>
+                <td>★★☆</td>
+                <td>~ ¥100</td>
+                <td>★★☆</td>
+                <td>否</td>
+              </tr>
+              <tr>
+                <td>本方案</td>
+                <td>★★★☆</td>
+                <td>~ ¥1000</td>
+                <td>★★★★</td>
+                <td>是</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="compare-summary reveal">
+          <div class="compare-item">
+            <span>专业动捕</span>
+            <b>高精度，但高成本</b>
+          </div>
+          <div class="compare-item">
+            <span>纯视觉</span>
+            <b>便宜，但不稳定</b>
+          </div>
+          <div class="compare-item">
+            <span>本方案</span>
+            <b>平衡成本、实时性与扩展性</b>
+          </div>
+          <div class="compare-item">
+            <span>核心价值</span>
+            <b>把“可用”变成“可推广”</b>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. 实施路径时间线 -->
+    <section id="timeline" class="section">
+      <div class="section-head reveal">
+        <div class="section-kicker">08 · 实施路径时间线</div>
+        <h2 class="section-title">从能跑，到跑稳，再到能扩展</h2>
+        <p class="section-desc">
+          时间线建议在汇报时配合“阶段目标 + 验收指标”一起讲，这样更像一个可执行项目，而不是概念展示。
+        </p>
+      </div>
+
+      <div class="timeline reveal">
+        <div class="phase">
+          <h4>Phase 0：基础感知打通（1–2 周）</h4>
+          <p>完成 MediaPipe / YOLOv8-pose on BPU 部署，保证基础感知链路稳定，目标达到 <b>20fps 以上</b>。</p>
+        </div>
+        <div class="phase">
+          <h4>Phase 1：MOSS 运动预测（2–3 周）</h4>
+          <p>部署时序模型，完成动作趋势预测、补帧和平滑，目标预测延迟 <b>小于 15ms</b>。</p>
+        </div>
+        <div class="phase">
+          <h4>Phase 2：Skill + Protocol（1 周）</h4>
+          <p>实现 <b>motion_output.skill</b> 与 JSON Builder，将模型结果输出为统一协议格式。</p>
+        </div>
+        <div class="phase">
+          <h4>Phase 3：适配器开发（2 周）</h4>
+          <p>开发虚拟主播 Adapter 与手势控制 Adapter，验证协议层统一后的多设备扩展能力。</p>
+        </div>
+        <div class="phase">
+          <h4>Phase 4：端云协同（可选，2 周）</h4>
+          <p>接入云端转发与语义干预，形成“端侧实时执行 + 云端认知增强”的混合模式。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. 技术亮点强调 -->
+    <section class="section">
+      <div class="section-head reveal">
+        <div class="section-kicker">09 · 技术亮点强调</div>
+        <h2 class="section-title">答辩时最值得反复强调的四句话</h2>
+        <p class="section-desc">
+          这页适合当作“总结卡片”，帮助老师快速抓住项目本质：端侧实时、预测驱动、隐私友好、架构可扩展。
+        </p>
+      </div>
+
+      <div class="highlight-grid">
+        <div class="highlight reveal">
+          <div class="score">10 TOPS</div>
+          <p>端侧算力足以承载实时动作预测与基础视觉链路，为机器人交互提供稳定底座。</p>
+        </div>
+        <div class="highlight reveal">
+          <div class="score">&lt; 15ms</div>
+          <p>MOSS 模型 BPU 量化后，目标推理延迟控制在低毫秒级，保证交互反馈的即时性。</p>
+        </div>
+        <div class="highlight reveal">
+          <div class="score">隐私优先</div>
+          <p>尽量在端侧完成核心识别与预测，减少原始视频外传，降低隐私泄露和网络波动影响。</p>
+        </div>
+        <div class="highlight reveal">
+          <div class="score">三种模式</div>
+          <p>Skill + Protocol 天然兼容本地、远程、云端三种工作方式，适合不同部署条件。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. 结尾页 -->
+    <section id="ending" class="section footer">
+      <div class="card closing reveal">
+        <h2>感谢聆听</h2>
+        <p>
+          这套方案尝试把“看见动作”升级为“预判动作”，把“控制设备”升级为“理解意图”。
+          通过端侧 AI、统一协议和轻量 Skill 的组合，让遥操作与动作预测从昂贵的实验方案，
+          变成可复用、可扩展、可落地的教学与创作平台。
+        </p>
+        <div class="slogan">人机协同，不再是跟随，而是预判</div>
+        <div class="contact">联系方式：可在此处替换为你的姓名、邮箱、班级或课题组信息</div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // 粒子背景
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles = [];
+
+    function resize() {
+      W = canvas.width = window.innerWidth * devicePixelRatio;
+      H = canvas.height = window.innerHeight * devicePixelRatio;
+      canvas.style.width = window.innerWidth + 'px';
+      canvas.style.height = window.innerHeight + 'px';
+      initParticles();
+    }
+
+    function rnd(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function initParticles() {
+      particles = [];
+      const count = Math.floor(Math.min(120, window.innerWidth / 14));
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: rnd(0, W),
+          y: rnd(0, H),
+          r: rnd(0.8, 2.1) * devicePixelRatio,
+          vx: rnd(-0.13, 0.13) * devicePixelRatio,
+          vy: rnd(0.05, 0.28) * devicePixelRatio,
+          a: rnd(0.18, 0.55),
+          hue: Math.random() > 0.55 ? 'cyan' : 'indigo'
+        });
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.y > H + 10) {
+          p.y = -10;
+          p.x = rnd(0, W);
+        }
+        if (p.x < -10) p.x = W + 10;
+        if (p.x > W + 10) p.x = -10;
+
+        ctx.beginPath();
+        ctx.fillStyle = p.hue === 'cyan'
+          ? `rgba(34,211,238,${p.a})`
+          : `rgba(129,140,248,${p.a})`;
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    // 滚动淡入
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    window.addEventListener('resize', resize);
+    resize();
+    draw();
+  </script>
+</body>
+</html>

@@ -75,13 +75,11 @@ optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 **Q3.** 回归任务为什么输出层不加激活函数？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 线性回归输出连续实数值（房价、温度），逻辑回归是分类（输出0~1概率）。前者用MSE损失，后者用交叉熵损失。
-
-**A2.** 13=输入特征数，1=输出值数。参数量 = 13×1 + 1(bias) = 14。
-
-**A3.** 因为回归需要输出任意实数值。如果加Sigmoid会限制输出在(0,1)，加ReLU会限制在[0,∞)，都无法正确预测可能的负值或超出范围的值。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 线性回归输出连续实数值（房价、温度），逻辑回归是分类（输出0~1概率）。前者用MSE损失，后者用交叉熵损失。</p>
+<p><strong>A2.</strong> 13=输入特征数，1=输出值数。参数量 = 13×1 + 1(bias) = 14。</p>
+<p><strong>A3.</strong> 因为回归需要输出任意实数值。如果加Sigmoid会限制输出在(0,1)，加ReLU会限制在[0,∞)，都无法正确预测可能的负值或超出范围的值。</p>
 </details>
 
 ---
@@ -162,15 +160,12 @@ $$ \text{Params}_{layer} = D_{in} \times D_{out} + D_{out} \ (\text{bias}) $$
 **Q4.** DNN和MLP（多层感知机）有什么区别？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** Layer1: 784×256+256=200,960; Layer2: 256×128+128=32,896; Layer3: 128×10+10=1,290; 总计=235,146。
-
-**A2.** 因为上一层的每个神经元都与下一层的每个神经元有连接（权重）。连接是"全"的→全连接。
-
-**A3.** "深度"指隐藏层的层数。上例中784→256→128→10有2个隐藏层（不算输入输出），深度=2。
-
-**A4.** 本质上是一回事。MLP（Multi-Layer Perceptron）是多层感知机的传统叫法，DNN（Deep Neural Network）强调"深度"足够大。在深度学习的语境下两者通常等价。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> Layer1: 784×256+256=200,960; Layer2: 256×128+128=32,896; Layer3: 128×10+10=1,290; 总计=235,146。</p>
+<p><strong>A2.</strong> 因为上一层的每个神经元都与下一层的每个神经元有连接（权重）。连接是"全"的→全连接。</p>
+<p><strong>A3.</strong> "深度"指隐藏层的层数。上例中784→256→128→10有2个隐藏层（不算输入输出），深度=2。</p>
+<p><strong>A4.</strong> 本质上是一回事。MLP（Multi-Layer Perceptron）是多层感知机的传统叫法，DNN（Deep Neural Network）强调"深度"足够大。在深度学习的语境下两者通常等价。</p>
 </details>
 
 ---
@@ -192,11 +187,10 @@ $$ \text{Params}_{layer} = D_{in} \times D_{out} + D_{out} \ (\text{bias}) $$
 **Q2.** 如果标签是整数 `[0, 2, 1, 3]`，应该用什么损失函数？标签需要转成one-hot吗？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 输出层神经元数和激活函数不同。二分类：1个神经元+Sigmoid；多分类：C个神经元+Softmax。其余结构可以完全相同。
-
-**A2.** CrossEntropyLoss。不需要转one-hot，PyTorch的CrossEntropyLoss直接接受整数标签，内部自己转换。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 输出层神经元数和激活函数不同。二分类：1个神经元+Sigmoid；多分类：C个神经元+Softmax。其余结构可以完全相同。</p>
+<p><strong>A2.</strong> CrossEntropyLoss。不需要转one-hot，PyTorch的CrossEntropyLoss直接接受整数标签，内部自己转换。</p>
 </details>
 
 ---
@@ -242,13 +236,11 @@ optimizer.step()
 **Q3.** 前向传播和反向传播哪个耗时更多？大约比例是多少？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 梯度会累加。第2个batch的梯度会累加到第1个batch的梯度上，等价于batch_size翻倍。如果是有意设计就是梯度累积，如果忘了写就是bug。
-
-**A2.** 前向是数据从输入→输出（前），反向是梯度从输出损失→输入权重（后）。"反"的是计算方向。
-
-**A3.** 反向传播约是前向的2~3倍耗时（因为需要计算所有中间变量的梯度并存储）。但这是自动完成的（autograd），程序员不需要手写。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 梯度会累加。第2个batch的梯度会累加到第1个batch的梯度上，等价于batch_size翻倍。如果是有意设计就是梯度累积，如果忘了写就是bug。</p>
+<p><strong>A2.</strong> 前向是数据从输入→输出（前），反向是梯度从输出损失→输入权重（后）。"反"的是计算方向。</p>
+<p><strong>A3.</strong> 反向传播约是前向的2~3倍耗时（因为需要计算所有中间变量的梯度并存储）。但这是自动完成的（autograd），程序员不需要手写。</p>
 </details>
 
 ---
@@ -273,11 +265,10 @@ N = ceil(总样本数 / batch_size)
 **Q2.** batch_size从64改为128（其他不变），训练一个epoch的时间会怎么变化？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 10000/128 = 78.125 → ceil = 79 次参数更新。
-
-**A2.** 每次iteration处理更多数据→单次iteration变慢，但iteration次数减少→总时间不一定大幅变化。GPU充足时大batch利用率更高可能更快。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 10000/128 = 78.125 → ceil = 79 次参数更新。</p>
+<p><strong>A2.</strong> 每次iteration处理更多数据→单次iteration变慢，但iteration次数减少→总时间不一定大幅变化。GPU充足时大batch利用率更高可能更快。</p>
 </details>
 
 ---

@@ -1,0 +1,151 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度学习随机考试系统</title>
+<script>MathJax={tex:{inlineMath:[['$','$']],displayMath:[['$$','$$']]}}</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--card2:#334155;--accent:#3b82f6;--accent2:#6366f1;--green:#22c55e;--red:#ef4444;--orange:#f59e0b;--text:#f1f5f9;--muted:#94a3b8;--border:#475569;--code-bg:#0f172a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.8;min-height:100vh}
+.container{max-width:960px;margin:0 auto;padding:20px}
+.header{background:linear-gradient(135deg,#1e40af,#7c3aed);border-radius:16px;padding:40px;text-align:center;margin-bottom:24px;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,255,255,0.05) 0%,transparent 60%);animation:rotate 20s linear infinite}
+@keyframes rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.header h1{font-size:32px;margin-bottom:8px;position:relative;z-index:1}
+.header p{opacity:0.85;position:relative;z-index:1}
+.start-screen{text-align:center;padding:40px 20px}
+.start-screen h2{font-size:24px;margin-bottom:32px;color:var(--accent)}
+.option-group{margin:24px 0;text-align:left;max-width:500px;margin-left:auto;margin-right:auto}
+.option-group label{display:block;font-size:16px;margin-bottom:12px;color:var(--muted)}
+.btn-group{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:16px 0}
+.btn{padding:12px 28px;border:2px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font-size:15px;cursor:pointer;transition:all 0.2s;font-weight:600}
+.btn:hover{border-color:var(--accent);background:rgba(59,130,246,0.1)}
+.btn.active{background:var(--accent);border-color:var(--accent);color:white}
+.start-btn{padding:16px 56px;font-size:20px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;border:none;border-radius:12px;cursor:pointer;margin-top:32px;transition:transform 0.2s,box-shadow 0.2s}
+.start-btn:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(59,130,246,0.3)}
+.info-bar{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.info-chip{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 18px;font-size:14px;display:flex;align-items:center;gap:8px}
+.info-chip .val{color:var(--accent);font-weight:700;font-size:18px}
+.timer{font-family:monospace}
+.timer.warning{color:var(--red);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.progress-bar{height:6px;background:var(--card2);border-radius:3px;margin-bottom:24px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:3px;transition:width 0.4s ease}
+.section-title{background:var(--card);border-left:4px solid var(--accent);padding:14px 20px;margin:28px 0 16px;border-radius:0 10px 10px 0;font-size:17px;font-weight:700;display:flex;justify-content:space-between}
+.section-title .score{font-size:13px;color:var(--muted);font-weight:400}
+.question{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px;transition:all 0.3s;animation:fadeIn 0.4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.question:hover{border-color:var(--accent);box-shadow:0 4px 16px rgba(59,130,246,0.1)}
+.q-head{font-weight:700;color:var(--accent);margin-bottom:12px;font-size:14px;display:flex;justify-content:space-between}
+.q-cat{background:var(--accent2);color:white;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.q-body{margin-bottom:14px;font-size:15px}
+.q-body p{margin:6px 0}
+.choices{display:flex;flex-direction:column;gap:8px}
+.choice-opt{display:flex;align-items:center;padding:12px 16px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.2s;font-size:14px}
+.choice-opt:hover{border-color:var(--accent);background:rgba(59,130,246,0.05)}
+.choice-opt.selected{border-color:var(--accent);background:rgba(59,130,246,0.15)}
+.choice-opt.correct{border-color:var(--green);background:rgba(34,197,94,0.15)}
+.choice-opt.wrong{border-color:var(--red);background:rgba(239,68,68,0.15)}
+.choice-opt input{margin-right:12px;transform:scale(1.3)}
+.fill-input{width:100%;padding:12px 16px;border:2px solid var(--border);border-radius:8px;background:var(--card2);color:var(--text);font-size:15px;font-family:monospace}
+.fill-input:focus{outline:none;border-color:var(--accent)}
+.tf-group{display:flex;gap:16px}
+.tf-btn{flex:1;padding:12px;border:2px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s;text-align:center}
+.tf-btn:hover{border-color:var(--accent)}
+.tf-btn.selected{background:var(--accent);border-color:var(--accent);color:white}
+.tf-btn.correct{background:var(--green);border-color:var(--green);color:white}
+.tf-btn.wrong{background:var(--red);border-color:var(--red);color:white}
+.short-area{width:100%;min-height:80px;padding:12px 16px;border:2px solid var(--border);border-radius:8px;background:var(--card2);color:var(--text);font-size:14px;resize:vertical;font-family:inherit}
+.short-area:focus{outline:none;border-color:var(--accent)}
+.explanation{margin-top:14px;padding:14px 18px;border-radius:10px;font-size:13px;line-height:1.7;display:none}
+.explanation.show{display:block}
+.explanation.correct-exp{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3)}
+.explanation.wrong-exp{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3)}
+.explanation strong{color:var(--green)}
+.explanation .ref-answer{color:var(--orange);font-weight:600}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 18px;overflow-x:auto;font-size:13px;line-height:1.6;margin:10px 0}
+code{font-family:"JetBrains Mono",Consolas,monospace;font-size:13px}
+p code,.q-body code{background:var(--card2);padding:2px 6px;border-radius:4px;color:#f472b6}
+.submit-section{text-align:center;margin-top:32px;padding:24px;background:var(--card);border-radius:12px}
+.submit-btn{padding:16px 56px;font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--green),#16a34a);color:white;border:none;border-radius:12px;cursor:pointer;transition:all 0.2s}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(34,197,94,0.3)}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center;z-index:1000}
+.modal-overlay.show{display:flex}
+.result-modal{background:var(--card);border-radius:20px;padding:40px;max-width:480px;width:90%;text-align:center;animation:slideUp 0.4s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.score-circle{width:140px;height:140px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:20px auto;font-size:42px;font-weight:800}
+.score-circle.excellent{background:linear-gradient(135deg,#22c55e,#16a34a);color:white}
+.score-circle.good{background:linear-gradient(135deg,#3b82f6,#6366f1);color:white}
+.score-circle.pass{background:linear-gradient(135deg,#f59e0b,#d97706);color:white}
+.score-circle.fail{background:linear-gradient(135deg,#ef4444,#dc2626);color:white}
+.result-stats{display:flex;justify-content:center;gap:32px;margin:24px 0}
+.stat .label{font-size:12px;color:var(--muted)}
+.stat .value{font-size:22px;font-weight:700}
+.modal-btn{padding:14px 40px;font-size:16px;font-weight:600;background:var(--accent);color:white;border:none;border-radius:10px;cursor:pointer;margin:8px}
+.modal-btn:hover{background:var(--accent2)}
+.hidden{display:none!important}
+@media print{body{background:white;color:black}.header,.start-screen,.submit-section,.modal-overlay,.info-bar{display:none}.question{border:1px solid #ccc;break-inside:avoid}.explanation{display:block!important}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>深度学习随机考试系统</h1>
+<p>涵盖神经网络基础 · CNN · RNN/LSTM · Transformer · 优化器 · 正则化 · 梯度问题 · 代码分析 · 对比学习与蒸馏 · 激活函数 · 多模态 · 综合进阶</p>
+</div>
+
+<div id="startScreen" class="start-screen">
+<h2>选择考试配置</h2>
+<div class="option-group"><label>考试模式：</label>
+<div class="btn-group" id="modeGroup">
+<button class="btn active" data-val="random">随机考试</button>
+<button class="btn" data-val="all">全量练习</button>
+</div></div>
+<div class="option-group" id="countGroup"><label>题目数量：</label>
+<div class="btn-group" id="countGroup2">
+<button class="btn" data-val="20">20 题</button>
+<button class="btn active" data-val="30">30 题</button>
+<button class="btn" data-val="40">40 题</button>
+<button class="btn" data-val="50">50 题</button>
+</div></div>
+<div class="option-group"><label>考试时间：</label>
+<div class="btn-group" id="timeGroup">
+<button class="btn" data-val="60">60 分钟</button>
+<button class="btn active" data-val="120">120 分钟</button>
+<button class="btn" data-val="180">180 分钟</button>
+</div></div>
+<button class="start-btn" onclick="startExam()">开始考试</button>
+</div>
+
+<div id="examScreen" class="hidden">
+<div class="info-bar">
+<div class="info-chip">题目 <span class="val" id="qCount">0</span></div>
+<div class="info-chip">已答 <span class="val" id="qAnswered">0</span></div>
+<div class="info-chip">计时 <span class="val timer" id="timerDisplay">120:00</span></div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div id="questionsContainer"></div>
+<div class="submit-section"><button class="submit-btn" onclick="submitExam()">提交试卷</button></div>
+</div>
+
+<div class="modal-overlay" id="resultModal">
+<div class="result-modal">
+<h2 style="margin-bottom:12px">考试结果</h2>
+<div class="score-circle" id="scoreCircle"><span id="scoreText">0</span></div>
+<div class="result-stats">
+<div class="stat"><div class="label">正确</div><div class="value" id="correctCount" style="color:var(--green)">0</div></div>
+<div class="stat"><div class="label">错误</div><div class="value" id="wrongCount" style="color:var(--red)">0</div></div>
+<div class="stat"><div class="label">用时</div><div class="value" id="timeUsed">0:00</div></div>
+</div>
+<button class="modal-btn" onclick="reviewAnswers()">查看解析</button>
+<button class="modal-btn" onclick="location.reload()">重新考试</button>
+</div></div>
+</div>
+
+<script src="question_bank.js"></script>
+<script src="exam_logic.js"></script>
+</body>
+</html>

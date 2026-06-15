@@ -26,11 +26,10 @@ $$ y_{h,w,c_{out}} = \sum_{c_{in}=1}^{C_{in}} w_{c_{in}, c_{out}} \cdot x_{h,w,c
 **Q2.** Conv2D(256, 64, 1) 的参数量是多少？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 1×1卷积作用在(H,W)每个空间位置独立执行相同的通道变换（共享权重），输出仍是(H,W,C_out)。Linear将整个张量展平后全连接，输出是1维向量。1×1保持空间结构，Linear破坏它。
-
-**A2.** 256×64×1×1 + 64 = 16,384 + 64 = 16,448。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 1×1卷积作用在(H,W)每个空间位置独立执行相同的通道变换（共享权重），输出仍是(H,W,C_out)。Linear将整个张量展平后全连接，输出是1维向量。1×1保持空间结构，Linear破坏它。</p>
+<p><strong>A2.</strong> 256×64×1×1 + 64 = 16,384 + 64 = 16,448。</p>
 </details>
 
 ---
@@ -67,11 +66,10 @@ dilation=2, K=3 → K_eff = 3+2×1 = 5
 **Q2.** 空洞卷积和普通卷积+MaxPool哪种更适合语义分割？为什么？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** K_eff = 3 + (3-1)×(3-1) = 3 + 2×2 = 7×7。
-
-**A2.** 空洞卷积更适合。语义分割需要像素级输出，MaxPool会永久丢失空间精度；空洞卷积在不缩小特征图的前提下获得大感受野，保留空间分辨率。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> K_eff = 3 + (3-1)×(3-1) = 3 + 2×2 = 7×7。</p>
+<p><strong>A2.</strong> 空洞卷积更适合。语义分割需要像素级输出，MaxPool会永久丢失空间精度；空洞卷积在不缩小特征图的前提下获得大感受野，保留空间分辨率。</p>
 </details>
 
 ---
@@ -131,13 +129,11 @@ Conv → BN → ReLU → Dropout → ... → Linear → ReLU → Dropout → Lin
 **Q3.** 为什么CNN中 Dropout 常用在 FC 层而不是 Conv 层？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 训练时保留的神经元输出会乘以 1/(1-p)=2 进行放大，使得期望不变。测试时不做Dropout也不缩放，因为期望和训练时一致。PyTorch内部自动完成这个缩放。
-
-**A2.** 可以同时使用，但存在"方差偏移"（Variance Shift）问题。BN在训练和测试时统计量不同，Dropout又改变了神经元分布，可能导致训练和测试不匹配。实践中很多模型仍一起用。建议顺序：Conv→BN→ReLU→Dropout。
-
-**A3.** Conv层的参数量少（共享权重），天然有一定的正则化效果，过拟合风险低。FC层参数量极大（占网络总参数的80-90%），过拟合风险高，所以Dropout主要用在FC层。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 训练时保留的神经元输出会乘以 1/(1-p)=2 进行放大，使得期望不变。测试时不做Dropout也不缩放，因为期望和训练时一致。PyTorch内部自动完成这个缩放。</p>
+<p><strong>A2.</strong> 可以同时使用，但存在"方差偏移"（Variance Shift）问题。BN在训练和测试时统计量不同，Dropout又改变了神经元分布，可能导致训练和测试不匹配。实践中很多模型仍一起用。建议顺序：Conv→BN→ReLU→Dropout。</p>
+<p><strong>A3.</strong> Conv层的参数量少（共享权重），天然有一定的正则化效果，过拟合风险低。FC层参数量极大（占网络总参数的80-90%），过拟合风险高，所以Dropout主要用在FC层。</p>
 </details>
 
 ---
@@ -177,11 +173,10 @@ y_mix = λ * y_a + (1-λ) * y_b
 **Q2.** 竖直翻转（VerticalFlip）适合什么任务？不适合什么任务？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 只有训练时需要。测试时用原始图像，不做增强。数据增强的目的是增加训练数据多样性，测试时不需要。
-
-**A2.** 适合：卫星图、显微镜图（无"上下"概念）。不适合：自然场景分类（天空通常在上方，上下翻转会破坏语义）。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 只有训练时需要。测试时用原始图像，不做增强。数据增强的目的是增加训练数据多样性，测试时不需要。</p>
+<p><strong>A2.</strong> 适合：卫星图、显微镜图（无"上下"概念）。不适合：自然场景分类（天空通常在上方，上下翻转会破坏语义）。</p>
 </details>
 
 ---
@@ -219,11 +214,10 @@ D. Conv→Pool→ReLU
 **Q2.** 为什么现在第一层Conv通常用 stride=2 替代单独的 Pool 层来下采样？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** B和C都违背常规。B把BN放ReLU后（BN应该归一化Conv的输出，不是ReLU后的）。C把BN放Conv前（BN应该放在Conv之后）。D中Pool一般不放在ReLU前面。正确答案是A：Conv→BN→ReLU。
-
-**A2.** 带stride的卷积是可学习的下采样（有参数），MaxPool是固定的无参数操作。stride-conv能同时完成特征提取和下采样，更灵活。ResNet首层就用的 stride=2 的7×7卷积，不用单独MaxPool。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> B和C都违背常规。B把BN放ReLU后（BN应该归一化Conv的输出，不是ReLU后的）。C把BN放Conv前（BN应该放在Conv之后）。D中Pool一般不放在ReLU前面。正确答案是A：Conv→BN→ReLU。</p>
+<p><strong>A2.</strong> 带stride的卷积是可学习的下采样（有参数），MaxPool是固定的无参数操作。stride-conv能同时完成特征提取和下采样，更灵活。ResNet首层就用的 stride=2 的7×7卷积，不用单独MaxPool。</p>
 </details>
 
 ---

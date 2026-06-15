@@ -50,13 +50,11 @@ Q·K^T 的方差 ≈ d_k（点积是 d_k 个独立随机变量之和）。除以
 **Q3.** Self-Attention的计算复杂度？为什么长序列上很慢？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** Q=(B,10,64), K^T=(B,64,10) → scores=(B,10,10)。Softmax在dim=-1上做→形状不变(10,10)，其中scores[i][j]=位置i对位置j的关注权重。
-
-**A2.** 置换不变：如果把输入序列打乱（如"我 爱 你"→"你 爱 我"），Self-Attention每步只关注其他token的内容而非位置，输出也会跟着打乱。问题：模型无法区分"我爱你"和"你爱我"。→需要位置编码解决。
-
-**A3.** O(L²·d)。QK^T 产生 L×L 的注意力矩阵，长序列（如L=10000）时 L²=1亿，计算和显存都吃不消。→需要稀疏注意力、FlashAttention等优化。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> Q=(B,10,64), K^T=(B,64,10) → scores=(B,10,10)。Softmax在dim=-1上做→形状不变(10,10)，其中scores[i][j]=位置i对位置j的关注权重。</p>
+<p><strong>A2.</strong> 置换不变：如果把输入序列打乱（如"我 爱 你"→"你 爱 我"），Self-Attention每步只关注其他token的内容而非位置，输出也会跟着打乱。问题：模型无法区分"我爱你"和"你爱我"。→需要位置编码解决。</p>
+<p><strong>A3.</strong> O(L²·d)。QK^T 产生 L×L 的注意力矩阵，长序列（如L=10000）时 L²=1亿，计算和显存都吃不消。→需要稀疏注意力、FlashAttention等优化。</p>
 </details>
 
 ---
@@ -99,13 +97,11 @@ $$ d_k = d_{model} / h $$
 **Q3.** 为什么需要输出投影层 `W_o`？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 256/4 = 64。
-
-**A2.** 是的。单头就是普通Self-Attention。多头通过多个不同投影子空间让模型同时关注多种不同的模式，效果显著优于单头。
-
-**A3.** W_o 将拼接后各头独立计算的结果进行跨头信息交互和重新组合。没有 W_o，各头的输出只是简单拼在一起，缺乏综合。数学上 W_o 是必需的。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 256/4 = 64。</p>
+<p><strong>A2.</strong> 是的。单头就是普通Self-Attention。多头通过多个不同投影子空间让模型同时关注多种不同的模式，效果显著优于单头。</p>
+<p><strong>A3.</strong> W_o 将拼接后各头独立计算的结果进行跨头信息交互和重新组合。没有 W_o，各头的输出只是简单拼在一起，缺乏综合。数学上 W_o 是必需的。</p>
 </details>
 
 ---
@@ -163,13 +159,11 @@ x = x + self.pos_emb(positions)
 **Q3.** Transformer 的 FFN 为什么中间维度通常设为 d_model 的 4 倍？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** Encoder: 2个（Self-Attn + FFN）。Decoder: 3个（Masked Self-Attn + Cross-Attn + FFN）。
-
-**A2.** Pre-LN中残差连接是 `x + Sublayer(LN(x))`，梯度可以不经过LN直接通过残差传播（即+1通道）。Post-LN中 `LN(x + Sublayer(x))`，梯度必须经过LN归一化层，在深层会逐渐衰减。
-
-**A3.** FFN是每个位置独立的特征变换。中间扩展到4倍增加非线性容量（在宽维度上做更多的特征组合），再压缩回去。若中间维度太小（如=d_model），非线性表达能力不足；太大则计算量大，4倍是实验得出的最佳平衡。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> Encoder: 2个（Self-Attn + FFN）。Decoder: 3个（Masked Self-Attn + Cross-Attn + FFN）。</p>
+<p><strong>A2.</strong> Pre-LN中残差连接是 <code>x + Sublayer(LN(x))</code>，梯度可以不经过LN直接通过残差传播（即+1通道）。Post-LN中 <code>LN(x + Sublayer(x))</code>，梯度必须经过LN归一化层，在深层会逐渐衰减。</p>
+<p><strong>A3.</strong> FFN是每个位置独立的特征变换。中间扩展到4倍增加非线性容量（在宽维度上做更多的特征组合），再压缩回去。若中间维度太小（如=d_model），非线性表达能力不足；太大则计算量大，4倍是实验得出的最佳平衡。</p>
 </details>
 
 ---
@@ -210,13 +204,11 @@ mask = torch.tril(torch.ones(L, L))  # 可见=1, 不可见=0
 **Q3.** 自回归生成时，第 t 步需要重新计算前 t-1 步的 Q、K、V 吗？如何优化？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** GPT：Next Token Prediction（自回归，P(x_t|x_{<t})，单向）。BERT：Masked Language Model（完形填空，根据上下文预测被[MASK]的词，双向）。
-
-**A2.** 对角线上位置i=j（可以看自己），上三角j>i（"未来"不能看），下三角j<i（"过去"可以看）。Triangular Lower matrix 正好满足这个约束。
-
-**A3.** 不需要！优化方案 = KV-Cache：缓存前t-1步的K和V，第t步只需计算新token的QKV，对历史K和V做拼接即可。将O(t²)降为O(t)。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> GPT：Next Token Prediction（自回归，P(x_t|x_{<t})，单向）。BERT：Masked Language Model（完形填空，根据上下文预测被[MASK]的词，双向）。</p>
+<p><strong>A2.</strong> 对角线上位置i=j（可以看自己），上三角j>i（"未来"不能看），下三角j<i（"过去"可以看）。Triangular Lower matrix 正好满足这个约束。</p>
+<p><strong>A3.</strong> 不需要！优化方案 = KV-Cache：缓存前t-1步的K和V，第t步只需计算新token的QKV，对历史K和V做拼接即可。将O(t²)降为O(t)。</p>
 </details>
 
 ---
@@ -236,11 +228,10 @@ mask = torch.tril(torch.ones(L, L))  # 可见=1, 不可见=0
 **Q2.** GPT能做分类任务吗？怎么做？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** Encoder-Only（如BERT）。分类任务只需理解输入文本，不需要生成新文本。BERT的双向注意力能看到完整上下文，比单向GPT分类效果更好。
-
-**A2.** 能。In-Context Learning：prompt "这段话的情感是：___\n文本：xxx"，GPT自回归生成"___"处的token。效果通常比专门微调的BERT差，但胜在通用。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> Encoder-Only（如BERT）。分类任务只需理解输入文本，不需要生成新文本。BERT的双向注意力能看到完整上下文，比单向GPT分类效果更好。</p>
+<p><strong>A2.</strong> 能。In-Context Learning：prompt "这段话的情感是：___\n文本：xxx"，GPT自回归生成"___"处的token。效果通常比专门微调的BERT差，但胜在通用。</p>
 </details>
 
 ---
@@ -291,13 +282,11 @@ $$ L_{scl} = \text{CrossEntropy}(z \cdot a^T / \tau, \ label) $$
 **Q3.** ELACL中的"锚点"（Anchor）为什么要用预训练模型生成而不是随机初始化？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 拼接：静态堆叠，模态间无信息交互。Cross-Attention：动态查询，一模态根据自身需要选择性地聚合另一模态的信息。Cross-Attention捕获了模态间的"语义对应关系"。
-
-**A2.** 文本是离散符号系统，语义明确（词汇+语法精确定义了含义）；音频(语调/音量)和图像(像素)是连续信号，语义模糊、噪声多。在情感识别中，"我很生气"远比从语调中推断生气更可靠。
-
-**A3.** 预训练模型的锚点有语义先验（"happy"和"sad"在特征空间自然就是分离的），给对比学习提供了好的"目标位置"。随机初始化则无任何语义信息，需要从头学习锚点之间的区分性，收敛更慢。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 拼接：静态堆叠，模态间无信息交互。Cross-Attention：动态查询，一模态根据自身需要选择性地聚合另一模态的信息。Cross-Attention捕获了模态间的"语义对应关系"。</p>
+<p><strong>A2.</strong> 文本是离散符号系统，语义明确（词汇+语法精确定义了含义）；音频(语调/音量)和图像(像素)是连续信号，语义模糊、噪声多。在情感识别中，"我很生气"远比从语调中推断生气更可靠。</p>
+<p><strong>A3.</strong> 预训练模型的锚点有语义先验（"happy"和"sad"在特征空间自然就是分离的），给对比学习提供了好的"目标位置"。随机初始化则无任何语义信息，需要从头学习锚点之间的区分性，收敛更慢。</p>
 </details>
 
 ---

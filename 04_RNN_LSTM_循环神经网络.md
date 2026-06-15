@@ -62,13 +62,11 @@ rnn = nn.RNN(input_size=128, hidden_size=256, num_layers=1, batch_first=True)
 **Q3.** SimpleRNN的激活函数为什么是Tanh而不是ReLU？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 循环指 $h_t$ 的计算依赖 $h_{t-1}$，$h_{t-1}$ 又依赖 $h_{t-2}$ ...→形成一条贯穿时间的链条。实现上是同一个RNN cell反复调用（for循环遍历时间步）。
-
-**A2.** 不变。W、U、b在所有时间步共享，参数量只取决于 input_dim 和 hidden_dim，与序列长度无关。这是RNN能处理变长序列的根本原因。
-
-**A3.** Tanh 输出 (-1,1)，有正有负，零中心 → 状态更新方向更平衡。ReLU 只输出非负值 → 隐藏状态会无限增长（指数级变大）→ 梯度爆炸。但实践中Tanh也带来梯度消失问题，这是SRN的主要缺陷。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 循环指 $h_t$ 的计算依赖 $h_{t-1}$，$h_{t-1}$ 又依赖 $h_{t-2}$ ...→形成一条贯穿时间的链条。实现上是同一个RNN cell反复调用（for循环遍历时间步）。</p>
+<p><strong>A2.</strong> 不变。W、U、b在所有时间步共享，参数量只取决于 input_dim 和 hidden_dim，与序列长度无关。这是RNN能处理变长序列的根本原因。</p>
+<p><strong>A3.</strong> Tanh 输出 (-1,1)，有正有负，零中心 → 状态更新方向更平衡。ReLU 只输出非负值 → 隐藏状态会无限增长（指数级变大）→ 梯度爆炸。但实践中Tanh也带来梯度消失问题，这是SRN的主要缺陷。</p>
 </details>
 
 ---
@@ -102,11 +100,10 @@ $$ \frac{\partial h_t}{\partial h_{t-1}} = \text{diag}(\tanh'(·)) \cdot U^T $$
 **Q2.** 为什么"长距离依赖"在SRN中很难学到？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 梯度爆炸。某个时间步的梯度指数增长，导致参数更新过大→溢出为NaN。解决：梯度裁剪。
-
-**A2.** 在BPTT中梯度需跨T个时间步传播，每一步乘一次 tanh'(≤1)和U。当T很大时（如100），连乘后梯度几乎为0→模型无法利用远距离的信息→学不到"第1个词和第100个词的关系"。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 梯度爆炸。某个时间步的梯度指数增长，导致参数更新过大→溢出为NaN。解决：梯度裁剪。</p>
+<p><strong>A2.</strong> 在BPTT中梯度需跨T个时间步传播，每一步乘一次 tanh'(≤1)和U。当T很大时（如100），连乘后梯度几乎为0→模型无法利用远距离的信息→学不到"第1个词和第100个词的关系"。</p>
 </details>
 
 ---
@@ -172,17 +169,13 @@ output, (hn, cn) = lstm(x, (h0, c0))
 **Q5.** LSTM 一共有多少组参数矩阵？写出变量名。
 
 ---
-<details><summary>答案</summary>
-
-**A1.** 三个门都用Sigmoid（输出0~1，"门"需要这个范围表示开闭程度）。候选记忆c̃_t用Tanh（(-1,1)，包含正负信息）。
-
-**A2.** $c_t$=长期记忆（线性更新，梯度无损跨时间步传播→解决消失问题）；$h_t$=短期输出（$c_t$经输出门过滤后对外的"发言"）。$c_t$内部用，$h_t$对外用。
-
-**A3.** 退化成普通的序列累加器：$c_t = c_{t-1}$（永远记住所有过去信息），无法选择性遗忘。实际中需要学到的策略是在需要遗忘时令$f_t$→0。
-
-**A4.** num_layers=2：两层LSTM纵向堆叠→输出维度不变(hidden_size)，参数翻倍。bidirectional=True：正向+反向各一个LSTM→输出维度翻倍(2×hidden_size)。
-
-**A5.** 12个：W_f, U_f, b_f (遗忘门); W_i, U_i, b_i (输入门); W_c, U_c, b_c (候选记忆); W_o, U_o, b_o (输出门)。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> 三个门都用Sigmoid（输出0~1，"门"需要这个范围表示开闭程度）。候选记忆c̃_t用Tanh（(-1,1)，包含正负信息）。</p>
+<p><strong>A2.</strong> $c_t$=长期记忆（线性更新，梯度无损跨时间步传播→解决消失问题）；$h_t$=短期输出（$c_t$经输出门过滤后对外的"发言"）。$c_t$内部用，$h_t$对外用。</p>
+<p><strong>A3.</strong> 退化成普通的序列累加器：$c_t = c_{t-1}$（永远记住所有过去信息），无法选择性遗忘。实际中需要学到的策略是在需要遗忘时令$f_t$→0。</p>
+<p><strong>A4.</strong> num_layers=2：两层LSTM纵向堆叠→输出维度不变(hidden_size)，参数翻倍。bidirectional=True：正向+反向各一个LSTM→输出维度翻倍(2×hidden_size)。</p>
+<p><strong>A5.</strong> 12个：W_f, U_f, b_f (遗忘门); W_i, U_i, b_i (输入门); W_c, U_c, b_c (候选记忆); W_o, U_o, b_o (输出门)。</p>
 </details>
 
 ---
@@ -235,11 +228,10 @@ output, (hn, cn) = lstm(x, (h0, c0))
 **Q2.** 除了Teacher Forcing，还有什么策略可以缓解Exposure Bias？
 
 ---
-<details><summary>答案</summary>
-
-**A1.** Teacher Forcing训练时模型每一步看到的是"完美"的真实前文，推理时则只能看到自己生成的（可能有错的）前缀。这种训练和推理条件的不一致导致推理时错误累积。
-
-**A2.** Scheduled Sampling（训练时逐步增加用自己预测的概率）、Professor Forcing（用GAN使自由运行和Teacher Forcing的隐藏状态分布一致）。
+<details>
+<summary>答案</summary>
+<p><strong>A1.</strong> Teacher Forcing训练时模型每一步看到的是"完美"的真实前文，推理时则只能看到自己生成的（可能有错的）前缀。这种训练和推理条件的不一致导致推理时错误累积。</p>
+<p><strong>A2.</strong> Scheduled Sampling（训练时逐步增加用自己预测的概率）、Professor Forcing（用GAN使自由运行和Teacher Forcing的隐藏状态分布一致）。</p>
 </details>
 
 ---

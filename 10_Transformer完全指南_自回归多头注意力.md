@@ -70,16 +70,11 @@ V = x @ W_v
 ---
 <details>
 <summary><b>点击查看答案</b></summary>
-
-**A1.** Q=查询向量(我要找什么)，K=键向量(我有什么)，V=值向量(实际内容)。Q·K^T 计算每对位置之间的相似度(注意力分数)，通过 softmax 归一化后作为权重加权聚合 V。
-
-**A2.** 当 d_k 很大时，点积 Q·K^T 的值也会很大，导致 softmax 进入饱和区（梯度接近0），模型难以学习。除以 √d_k 将方差控制为1，保持梯度稳定。
-
-**A3.** 将 mask 为0的位置的注意力分数设为 -∞，softmax 后这些位置的权重变为0（因为 e^{-∞}=0）。常用于 padding mask（忽略填充位置）和 causal mask（自回归解码时防止看到未来信息）。
-
-**A4.** Self-Attention: Q、K、V 来自同一输入（如 Transformer Encoder 中）。Cross-Attention: Q 来自解码器，K、V 来自编码器输出（如机器翻译中，解码器"关注"编码器的源语言表示）。
-
-**A5.** O(L²·d)，L 为序列长度。长序列上计算量平方级增长，这是 Transformer 的主要瓶颈。解决方案：稀疏注意力、FlashAttention、线性注意力等。
+<p><strong>A1.</strong> Q=查询向量(我要找什么)，K=键向量(我有什么)，V=值向量(实际内容)。Q·K^T 计算每对位置之间的相似度(注意力分数)，通过 softmax 归一化后作为权重加权聚合 V。</p>
+<p><strong>A2.</strong> 当 d_k 很大时，点积 Q·K^T 的值也会很大，导致 softmax 进入饱和区（梯度接近0），模型难以学习。除以 √d_k 将方差控制为1，保持梯度稳定。</p>
+<p><strong>A3.</strong> 将 mask 为0的位置的注意力分数设为 -∞，softmax 后这些位置的权重变为0（因为 e^{-∞}=0）。常用于 padding mask（忽略填充位置）和 causal mask（自回归解码时防止看到未来信息）。</p>
+<p><strong>A4.</strong> Self-Attention: Q、K、V 来自同一输入（如 Transformer Encoder 中）。Cross-Attention: Q 来自解码器，K、V 来自编码器输出（如机器翻译中，解码器"关注"编码器的源语言表示）。</p>
+<p><strong>A5.</strong> O(L²·d)，L 为序列长度。长序列上计算量平方级增长，这是 Transformer 的主要瓶颈。解决方案：稀疏注意力、FlashAttention、线性注意力等。</p>
 </details>
 
 ---
@@ -199,19 +194,14 @@ out:         (B, 10, 512)     ← 恢复原始维度
 ---
 <details>
 <summary><b>点击查看答案</b></summary>
-
-**A1.**
-(1) d_k = 256 / 8 = 32
-(2) (32, 50, 256) — 输入输出维度相同
-(3) (32, 8, 50, 50) — 8个头×50查询位置×50被查位置
-
-**A2.** "多头"在 view() 和 transpose() 拆分步骤体现：将 d_model 拆成 n_heads 份。n_heads=1 时就是普通的单头自注意力，计算结果完全等价，但失去捕获多种模式的能力。
-
-**A3.** W_o 将拼接后的多头输出线性投影，给不同头的输出分配不同权重。去掉后直接拼接输出，缺少跨头信息交互，表达能力下降。不可省略。
-
-**A4.** d_k = 512/16 = 32。好处：更多头可以捕获更多种细粒度的模式；坏处：每个头的维度变小，表示能力减弱，且计算量增加。
-
-**A5.** 错误。不是"复制"——每个头有独立的 W_q, W_k, W_v 投影矩阵，所以每个头在**不同的投影子空间**中计算注意力。也不"取平均"——是拼接后通过 W_o 投影，不是简单平均。
+<p><strong>A1.</strong></p>
+<p>(1) d_k = 256 / 8 = 32</p>
+<p>(2) (32, 50, 256) — 输入输出维度相同</p>
+<p>(3) (32, 8, 50, 50) — 8个头×50查询位置×50被查位置</p>
+<p><strong>A2.</strong> "多头"在 view() 和 transpose() 拆分步骤体现：将 d_model 拆成 n_heads 份。n_heads=1 时就是普通的单头自注意力，计算结果完全等价，但失去捕获多种模式的能力。</p>
+<p><strong>A3.</strong> W_o 将拼接后的多头输出线性投影，给不同头的输出分配不同权重。去掉后直接拼接输出，缺少跨头信息交互，表达能力下降。不可省略。</p>
+<p><strong>A4.</strong> d_k = 512/16 = 32。好处：更多头可以捕获更多种细粒度的模式；坏处：每个头的维度变小，表示能力减弱，且计算量增加。</p>
+<p><strong>A5.</strong> 错误。不是"复制"——每个头有独立的 W_q, W_k, W_v 投影矩阵，所以每个头在<strong>不同的投影子空间</strong>中计算注意力。也不"取平均"——是拼接后通过 W_o 投影，不是简单平均。</p>
 </details>
 
 ---
@@ -296,16 +286,11 @@ class TransformerEncoderBlock(nn.Module):
 ---
 <details>
 <summary><b>点击查看答案</b></summary>
-
-**A1.** (1) Multi-Head Self-Attention：建模序列内任意位置之间的依赖关系。(2) Feed-Forward Network：对每个位置独立地非线性变换，增强表达能力。
-
-**A2.** `output = x + Sublayer(x)`。需要是因为：(1) 缓解梯度消失——梯度可直通残差传播；(2) 让深层网络至少不差于浅层（恒等映射兜底）。
-
-**A3.** LayerNorm 对每个样本的特征维度做归一化（不依赖 batch_size），适合可变长度序列。BatchNorm 对 batch 维度归一化，序列长度不一致时统计量不稳定，且小 batch 下效果差。
-
-**A4.** 4倍扩展可增加中间层的非线性表示容量。去掉 FFN 后，Transformer Block 只剩线性加权求和（Attention本质是线性），模型退化为近似线性映射，失去学习复杂模式的能力。
-
-**A5.** Pre-LN: `x + Sublayer(LN(x))`，梯度可通过残差直通；Post-LN: `LN(x + Sublayer(x))`，梯度需经过LN。Pre-LN更稳定，训练初期不需要学习率warmup。现代模型（GPT、ViT等）多用Pre-LN。
+<p><strong>A1.</strong> (1) Multi-Head Self-Attention：建模序列内任意位置之间的依赖关系。(2) Feed-Forward Network：对每个位置独立地非线性变换，增强表达能力。</p>
+<p><strong>A2.</strong> <code>output = x + Sublayer(x)</code>。需要是因为：(1) 缓解梯度消失——梯度可直通残差传播；(2) 让深层网络至少不差于浅层（恒等映射兜底）。</p>
+<p><strong>A3.</strong> LayerNorm 对每个样本的特征维度做归一化（不依赖 batch_size），适合可变长度序列。BatchNorm 对 batch 维度归一化，序列长度不一致时统计量不稳定，且小 batch 下效果差。</p>
+<p><strong>A4.</strong> 4倍扩展可增加中间层的非线性表示容量。去掉 FFN 后，Transformer Block 只剩线性加权求和（Attention本质是线性），模型退化为近似线性映射，失去学习复杂模式的能力。</p>
+<p><strong>A5.</strong> Pre-LN: <code>x + Sublayer(LN(x))</code>，梯度可通过残差直通；Post-LN: <code>LN(x + Sublayer(x))</code>，梯度需经过LN。Pre-LN更稳定，训练初期不需要学习率warmup。现代模型（GPT、ViT等）多用Pre-LN。</p>
 </details>
 
 ---
@@ -426,20 +411,13 @@ A. BERT  B. GPT  C. ViT  D. SimCLR
 ---
 <details>
 <summary><b>点击查看答案</b></summary>
-
-**A1.** 自回归：生成第 t 个 token 时只能用前 t-1 个 token，建模 P(x_t|x_{<t})。Decoder 必须自回归是因为生成任务需要逐 token 产生输出，不能提前看到未来信息。
-
-**A2.** 下三角矩阵（包含对角线）。上三角位置（即第 i 个 token 看第 j 个 token，j > i）设为 -∞，softmax 后权重为 0。
-
-**A3.** Greedy：每步选概率最大的 token（单路径）。Beam Search：每步保留 top-k 条路径（k条路径并行）。Greedy 适合需要快速生成的场景；Beam Search 适合翻译等精确性要求高的任务，但可能生成重复内容。
-
-**A4.** Q 来自 Decoder 的当前表示，K 和 V 都来自 Encoder 的输出。
-
-**A5.** GPT 是 Decoder-only 架构：没有 Encoder，没有 Cross-Attention，只有 Masked Self-Attention + FFN。因此它不需要源语言输入，直接根据前缀生成后续文本。
-
-**A6.** τ=0.5：softmax分布更尖锐（概率集中在高分token），生成更确定/保守。τ=2.0：分布更平滑（token间概率差距缩小），生成更随机/多样。
-
-**A7.** B。GPT 是自回归（左→右逐token预测），BERT 是双向（Masked Language Model），ViT 是图像编码器（不生成），SimCLR 是对比学习框架。
+<p><strong>A1.</strong> 自回归：生成第 t 个 token 时只能用前 t-1 个 token，建模 P(x_t|x_{<t})。Decoder 必须自回归是因为生成任务需要逐 token 产生输出，不能提前看到未来信息。</p>
+<p><strong>A2.</strong> 下三角矩阵（包含对角线）。上三角位置（即第 i 个 token 看第 j 个 token，j > i）设为 -∞，softmax 后权重为 0。</p>
+<p><strong>A3.</strong> Greedy：每步选概率最大的 token（单路径）。Beam Search：每步保留 top-k 条路径（k条路径并行）。Greedy 适合需要快速生成的场景；Beam Search 适合翻译等精确性要求高的任务，但可能生成重复内容。</p>
+<p><strong>A4.</strong> Q 来自 Decoder 的当前表示，K 和 V 都来自 Encoder 的输出。</p>
+<p><strong>A5.</strong> GPT 是 Decoder-only 架构：没有 Encoder，没有 Cross-Attention，只有 Masked Self-Attention + FFN。因此它不需要源语言输入，直接根据前缀生成后续文本。</p>
+<p><strong>A6.</strong> τ=0.5：softmax分布更尖锐（概率集中在高分token），生成更确定/保守。τ=2.0：分布更平滑（token间概率差距缩小），生成更随机/多样。</p>
+<p><strong>A7.</strong> B。GPT 是自回归（左→右逐token预测），BERT 是双向（Masked Language Model），ViT 是图像编码器（不生成），SimCLR 是对比学习框架。</p>
 </details>
 
 ---
@@ -499,14 +477,10 @@ x = x + self.pos_embedding[:, :x.size(1), :]  # 直接加
 ---
 <details>
 <summary><b>点击查看答案</b></summary>
-
-**A1.** Self-Attention 的输出 = softmax(QK^T)V，QK^T 的计算对序列顺序无感知——交换两个位置只是交换对应行。位置信息必须由位置编码注入。
-
-**A2.** sin/cos 交替使用使得不同频率的正弦波叠加，不同位置有不同编码模式。因为 sin(pos+k) 可表示为 sin(pos) 和 cos(pos) 的线性组合，所以编码包含相对位置信息。
-
-**A3.** 可学习：灵活（数据驱动学习最优编码），但受训练长度限制（超过 max_len 无法外推）。正弦：固定函数、可外推到任意长度，但可能不如学习的好。
-
-**A4.** 正弦编码可以直接外推到1000（因为它是确定函数，输入任意 pos 都能算）。可学习编码如果只训练了512就不能直接处理1000（没有训练过位置512+的embedding），需要插值等技巧。
+<p><strong>A1.</strong> Self-Attention 的输出 = softmax(QK^T)V，QK^T 的计算对序列顺序无感知——交换两个位置只是交换对应行。位置信息必须由位置编码注入。</p>
+<p><strong>A2.</strong> sin/cos 交替使用使得不同频率的正弦波叠加，不同位置有不同编码模式。因为 sin(pos+k) 可表示为 sin(pos) 和 cos(pos) 的线性组合，所以编码包含相对位置信息。</p>
+<p><strong>A3.</strong> 可学习：灵活（数据驱动学习最优编码），但受训练长度限制（超过 max_len 无法外推）。正弦：固定函数、可外推到任意长度，但可能不如学习的好。</p>
+<p><strong>A4.</strong> 正弦编码可以直接外推到1000（因为它是确定函数，输入任意 pos 都能算）。可学习编码如果只训练了512就不能直接处理1000（没有训练过位置512+的embedding），需要插值等技巧。</p>
 </details>
 
 ---
@@ -572,14 +546,10 @@ def generate(model, prompt, max_len=50, temperature=1.0):
 ---
 <details>
 <summary><b>点击查看答案</b></summary>
-
-**A1.** 训练目标：Next Token Prediction（下一个token预测）。输入: [我, 爱, 北京, 天安门]，标签: [爱, 北京, 天安门, <EOS>]。每个位置的输出预测下一个token。
-
-**A2.** 生成时只需要预测**下一个** token，而最后一个位置汇聚了所有前文信息（通过 causal self-attention）。前面位置的输出在训练时预测各自的下一个token，推理时不需要。
-
-**A3.** GPT: 自回归(左→右)、Next Token Prediction、文本生成/对话。BERT: 双向、Masked Language Model(完形填空)、文本理解/分类。GPT适合生成任务，BERT适合理解任务。
-
-**A4.** Transformer 的 Pre-LN + 残差连接使梯度可以直通，不受深度影响。而 RNN 需要 BPTT 跨时间步反向传播，梯度连乘导致梯度消失/爆炸，层数和序列长度双重限制深度。
+<p><strong>A1.</strong> 训练目标：Next Token Prediction（下一个token预测）。输入: [我, 爱, 北京, 天安门]，标签: [爱, 北京, 天安门, <EOS>]。每个位置的输出预测下一个token。</p>
+<p><strong>A2.</strong> 生成时只需要预测<strong>下一个</strong> token，而最后一个位置汇聚了所有前文信息（通过 causal self-attention）。前面位置的输出在训练时预测各自的下一个token，推理时不需要。</p>
+<p><strong>A3.</strong> GPT: 自回归(左→右)、Next Token Prediction、文本生成/对话。BERT: 双向、Masked Language Model(完形填空)、文本理解/分类。GPT适合生成任务，BERT适合理解任务。</p>
+<p><strong>A4.</strong> Transformer 的 Pre-LN + 残差连接使梯度可以直通，不受深度影响。而 RNN 需要 BPTT 跨时间步反向传播，梯度连乘导致梯度消失/爆炸，层数和序列长度双重限制深度。</p>
 </details>
 
 ---
@@ -605,12 +575,9 @@ def generate(model, prompt, max_len=50, temperature=1.0):
 ---
 <details>
 <summary><b>点击查看答案</b></summary>
-
-**A1.** Encoder-Only（如BERT）。因为文本理解/分类任务不需要生成新文本，只需要对输入进行编码后做分类。双向注意力能让模型看到完整上下文。
-
-**A2.** Encoder-Decoder（如T5）。Encoder 双向编码源语言，Decoder 自回归生成目标语言，Cross-Attention 连接两者。
-
-**A3.** 能。GPT 可通过 Prompt 方式：输入 "这段话的情感是：[MASK]\n 文本：今天天气真好"，模型自回归地生成下一个 token（如"正面"）。这就是 In-Context Learning。
+<p><strong>A1.</strong> Encoder-Only（如BERT）。因为文本理解/分类任务不需要生成新文本，只需要对输入进行编码后做分类。双向注意力能让模型看到完整上下文。</p>
+<p><strong>A2.</strong> Encoder-Decoder（如T5）。Encoder 双向编码源语言，Decoder 自回归生成目标语言，Cross-Attention 连接两者。</p>
+<p><strong>A3.</strong> 能。GPT 可通过 Prompt 方式：输入 "这段话的情感是：[MASK]\n 文本：今天天气真好"，模型自回归地生成下一个 token（如"正面"）。这就是 In-Context Learning。</p>
 </details>
 
 ---
@@ -657,12 +624,9 @@ for i in range(max_len):
 ---
 <details>
 <summary><b>点击查看答案</b></summary>
-
-**A1.** KV-Cache 缓存已生成 token 的 Key 和 Value。第 t 步推理时，前 t-1 步的 K、V 直接复用，只需计算新 token 的 QKV，将 O(L²·t) 减少到 O(L·t)。
-
-**A2.** MQA：所有头共享同一组 K、V（只有一组），Q 独立；GQA：头分若干组，每组内共享 K、V（折中方案）。MQA 最省显存但效果可能下降，GQA 平衡效果和效率。
-
-**A3.** 没有改变数学公式。FlashAttention 通过将注意力计算分块（tiling），在 GPU 的 SRAM（高速缓存）中完成运算，避免反复读写 HBM（显存），大幅减少 I/O 开销。
+<p><strong>A1.</strong> KV-Cache 缓存已生成 token 的 Key 和 Value。第 t 步推理时，前 t-1 步的 K、V 直接复用，只需计算新 token 的 QKV，将 O(L²·t) 减少到 O(L·t)。</p>
+<p><strong>A2.</strong> MQA：所有头共享同一组 K、V（只有一组），Q 独立；GQA：头分若干组，每组内共享 K、V（折中方案）。MQA 最省显存但效果可能下降，GQA 平衡效果和效率。</p>
+<p><strong>A3.</strong> 没有改变数学公式。FlashAttention 通过将注意力计算分块（tiling），在 GPU 的 SRAM（高速缓存）中完成运算，避免反复读写 HBM（显存），大幅减少 I/O 开销。</p>
 </details>
 
 ---

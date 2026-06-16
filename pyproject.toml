@@ -1,0 +1,14 @@
+[project]
+name = "test-exam"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "markdown>=3.10.2",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocs-quiz>=1.6.4",
+    "pyqt5>=5.15.11",
+    "pyqtwebengine>=5.15.7",
+]

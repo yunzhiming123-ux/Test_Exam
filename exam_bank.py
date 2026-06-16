@@ -434,11 +434,35 @@ class ExamBank(QMainWindow):
 
 # ==================== 启动入口 ====================
 def main():
-    # 设置 Qt 平台插件路径（解决 Windows 平台插件找不到的问题）
+    # 设置 Qt 平台插件路径（兼容不同版本的 PyQt5 安装结构）
     import PyQt5
     pyqt5_dir = os.path.dirname(PyQt5.__file__)
-    plugin_path = os.path.join(pyqt5_dir, 'Qt', 'plugins')
-    os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+    # 尝试多种可能的插件路径
+    plugin_paths = [
+        os.path.join(pyqt5_dir, 'Qt5', 'plugins'),
+        os.path.join(pyqt5_dir, 'Qt', 'plugins'),
+    ]
+    for plugin_path in plugin_paths:
+        if os.path.isdir(os.path.join(plugin_path, 'platforms')):
+            os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = plugin_path
+            qt_root = os.path.dirname(plugin_path)
+            # 设置 QtWebEngineProcess 路径
+            webengine_process = os.path.join(qt_root, 'libexec', 'QtWebEngineProcess')
+            if os.path.exists(webengine_process):
+                os.environ['QTWEBENGINEPROCESS_PATH'] = webengine_process
+            # 设置 QtWebEngine 资源路径
+            resources_path = os.path.join(qt_root, 'resources')
+            if os.path.isdir(resources_path):
+                os.environ['QTWEBENGINE_RESOURCES_PATH'] = resources_path
+            # 设置 Qt 翻译路径
+            translations_path = os.path.join(qt_root, 'translations')
+            if os.path.isdir(translations_path):
+                os.environ['QT_TRANSLATIONS_DIR'] = translations_path
+            break
+    # 设置 XCB 平台（X11）
+    os.environ['QT_QPA_PLATFORM'] = 'xcb'
+    # 禁用 GPU 加速可能解决某些显示问题
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-gpu'
     
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)

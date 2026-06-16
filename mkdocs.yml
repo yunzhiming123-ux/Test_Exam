@@ -1,0 +1,72 @@
+site_name: 深度学习考试题库
+site_description: 全中文互动学习工具 - 支持学习模式、练习模式、考试模式
+site_url: https://example.com
+
+theme:
+  name: material
+  language: zh
+  palette:
+    primary: blue
+    accent: blue
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+
+nav:
+  - 首页: index.md
+  - 知识体系:
+    - 神经网络基础: 01_神经网络基础_线性回归与DNN.md
+    - CNN卷积神经网络(上): 02_CNN_卷积神经网络_上.md
+    - CNN卷积神经网络(下): 03_CNN_卷积神经网络_下.md
+    - RNN循环神经网络: 04_RNN_LSTM_循环神经网络.md
+    - Transformer: 05_多模态情感识别_Transformer.md
+    - 文献理论: 06_文献理论与综合概念.md
+    - 知识全景: 深度学习知识全景.md
+    - 核心基础: 08_深度学习核心基础_原理公式代码.md
+    - Transformer指南: 10_Transformer完全指南_自回归多头注意力.md
+    - 高频考点: 11_深度学习高频考点_通用问答.md
+    - 知识体系总纲: 12_深度学习知识体系总纲.md
+  - 题库练习:
+    - 代码分析题库: 09_代码片段分析题库.md
+    - 模板示例: 模板_题库格式示例.md
+  - 模拟考试:
+    - 综合模拟考试卷: 07_综合模拟考试卷.md
+    - 计算专题: 13_计算专题.md
+    - 代码分析专题: 14_代码分析.md
+    - 选择填空专题: 15_选择填空.md
+    - 代码编写专题: 16_代码编写.md
+  - 功能说明: 功能说明.md
+  - 更新日志: 更新日志.md
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.tasklist
+
+plugins:
+  - search
+  - mkdocs_quiz:
+      auto_number: true
+      show_progress: true
+      language: zh
+
+extra:
+  version: 1.0.0
+
+extra_javascript:
+  - js/mathjax-config.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js
+
+extra_css:
+  - https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css
